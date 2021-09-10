@@ -1,0 +1,14 @@
+pandas
+rich
+pymysql
+tqdm
+pytimeparse
+simplejson
+slugify
+tabulate
+packaging
+toolz
+doger
+environs
+click
+click_help_colors
