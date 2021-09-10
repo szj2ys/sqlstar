@@ -203,7 +203,7 @@ class register(object):
         :param table:
         :param data:
         :param cols:
-        :param ignore: Whether or no ignore duplicate data when repeat
+        :param ignore: whether or no ignore duplicate data when repeat
         :return:
         """
 
