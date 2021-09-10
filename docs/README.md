@@ -104,7 +104,7 @@ if __name__ == '__main__':
     sqliting.execute("INSERT into tester values (?, ?)", ("2010-01-01 13:00:00", "bow"))
     sqliting.execute("INSERT into tester values (?, ?)", ("2011-02-02 14:14:14", "dog"))
 
-    results, cols = sqliting.read_df("SELECT * from tester")
+    results, cols = sqliting.select_as_df("SELECT * from tester")
     print(results)
     print(cols)
 
