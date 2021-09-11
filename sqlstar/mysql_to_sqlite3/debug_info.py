@@ -12,7 +12,7 @@ from distutils.spawn import find_executable
 from subprocess import check_output
 
 import click
-from sqling.mysql import connector
+from sqlstar._mysql import connector
 import pytimeparse
 import simplejson
 import six

@@ -12,8 +12,8 @@ from os.path import realpath
 from sys import stdout
 
 import six
-from sqlstar.mysql import connector
-from sqlstar.mysql.connector import errorcode
+from sqlstar._mysql import connector
+from sqlstar._mysql.connector import errorcode
 from tqdm import tqdm, trange
 
 from sqlstar.mysql_to_sqlite3.sqlite_utils import (

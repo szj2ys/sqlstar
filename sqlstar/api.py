@@ -1,6 +1,6 @@
 # *_*coding:utf-8 *_*
 """
-Author:szj2ys
+Author:SZJ
 """
 import os
 import traceback
@@ -9,8 +9,10 @@ import pymysql, sys
 import pandas as pd
 from toolz import merge
 
+from sqlstar.utils import deprecated
 
-class register(object):
+
+class mysql(object):
     def __init__(self, **kwargs):
         # extract  parameters and convert names to lowercase
         params = {}
@@ -45,11 +47,10 @@ class register(object):
             )
             self.cur = self.conn.cursor()
         except:
-            Console().print(
-                "\n[bold red]Please checkout your database settings:[/bold red]\nHOST:{}\nPORT:{}\nUSER:{}\nPASSWD:{}\nDB:{}"
+            raise Exception(
+                "\nPlease checkout your database settings 💥 💔 💥\nHOST:{}\nPORT:{}\nUSER:{}\nPASSWD:{}\nDB:{}"
                 .format(self.host, self.port, self.username, self.password,
                         self.db))
-            raise Exception("Please checkout your database settings 💥 💔 💥")
 
     def get_host(self):
         return self.host
@@ -87,8 +88,8 @@ class register(object):
         except:
             conn.rollback()
             # traceback.print_exc()
-            Console().print(command, style='bold red')
-            raise Exception("Ops, fail to execute this command 💥 💔 💥")
+            raise Exception(
+                f"Ops, fail to execute this command 💥 💔 💥\n{command}")
 
     def select(self, *, command: str):
         """select data
@@ -103,7 +104,6 @@ class register(object):
             fetchdata = cur.fetchall()
             return fetchdata, nlines
         except Exception as why:
-            Console().print(f"Oh no💥 💔 💥\n{why}", style='red')
             raise why
 
     def select_count(self, table):
@@ -248,6 +248,7 @@ class register(object):
                 f"There are {len(data)} pieces of data has been inserted into "
                 f"table {table}✨ 🍰 ✨")
 
+    @deprecated
     def insert_many_old(self, table, data, cols):
         """insert many data（保留此方法仅供参考）
 
@@ -511,7 +512,7 @@ new_default_value new_comment;
         r'''
 Pandas supported data types:
 float、int、bool、datetime64[ns]、datetime64[ns, tz]、timedelta[ns]、category、object
-    >>> mysql_client = sqlstar.register(...)
+    >>> mysql_client = sqlstar.mysql(...)
     >>> mysql_client.create_table(table='quant_news_analyse',
                           df=df,
                           comments={

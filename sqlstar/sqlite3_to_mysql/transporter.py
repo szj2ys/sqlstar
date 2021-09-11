@@ -11,8 +11,8 @@ from math import ceil
 from os.path import isfile, realpath
 from sys import stdout
 
-from sqlstar.mysql import connector
-from sqlstar.mysql.connector import errorcode
+from sqlstar._mysql import connector
+from sqlstar._mysql.connector import errorcode
 import six
 from packaging import version
 from tqdm import tqdm, trange

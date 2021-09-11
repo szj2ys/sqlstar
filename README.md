@@ -49,7 +49,7 @@ Haha, `sqlstar` is now on your environment, having fun with it, enjoy ...
 import sqlstar
 
 
-mysql = sqlstar.register(
+mysql = sqlstar.mysql(
     host="localhost", port=3306, user="root", passwd="root", db="adv_center"
 )
 
@@ -99,7 +99,7 @@ sqlite2mysql --help
 import sqlstar
 
 if __name__ == '__main__':
-    sqliting = sqlstar.path("./test.db")
+    sqliting = sqlstar.sqlite("./test.db")
     sqliting.execute("CREATE TABLE IF NOT EXISTS tester (timestamp DATETIME, uuid TEXT)")
     sqliting.execute("INSERT into tester values (?, ?)", ("2010-01-01 13:00:00", "bow"))
     sqliting.execute("INSERT into tester values (?, ?)", ("2011-02-02 14:14:14", "dog"))
