@@ -1,15 +1,16 @@
 # *_*coding:utf-8 *_*
 """
-Author:SZJ
+Author: szj
 """
 import os
 import traceback
 from rich.console import Console
 import pymysql, sys
 import pandas as pd
+import numpy as np
 from toolz import merge
 
-from sqlstar.utils import deprecated
+from sqlstar.utils import deprecated, check_dtype
 
 
 class mysql(object):
@@ -33,11 +34,13 @@ class mysql(object):
         assert self.password, "password is required"
         assert self.db, "db is required"
 
-        self.initializeDB()
+        # Connect to the database during initialization
+        self.connection, self.cursor = self.initializeDB()
 
     def initializeDB(self):
+        """Initialize mysql"""
         try:
-            self.conn = pymysql.connect(
+            connection = pymysql.connect(
                 host=self.host,
                 port=self.port,
                 user=self.username,
@@ -45,69 +48,51 @@ class mysql(object):
                 db=self.db,
                 # charset=self.charset,
             )
-            self.cur = self.conn.cursor()
+            cursor = connection.cursor()
+            return connection, cursor
         except:
             raise Exception(
                 "\nPlease checkout your database settings 💥 💔 💥\nHOST:{}\nPORT:{}\nUSER:{}\nPASSWD:{}\nDB:{}"
                 .format(self.host, self.port, self.username, self.password,
                         self.db))
 
-    def get_host(self):
-        return self.host
-
-    def get_port(self):
-        return self.port
-
-    def get_username(self):
-        return self.username
-
-    def get_password(self):
-        return self.password
-
-    def get_db(self):
-        return self.db
-
-    def get_charset(self):
-        return self.charset
-
     def get_connect(self):
-        if not self.conn.open:
-            self.initializeDB()
-        return self.conn, self.cur
+        """Get connection and cursor"""
+        if not self.connection.open:
+            self.connection, self.cursor = self.initializeDB()
+        return self.connection, self.cursor
 
     def execute(self, command: str):
-        """execute sql command
-
-        :return: bool
+        """Execute sql command
         """
-        conn, cur = self.get_connect()
+        connection, cursor = self.get_connect()
         try:
-            cur.execute(command)
-            conn.commit()
+            cursor.execute(command)
+            connection.commit()
             return True
         except:
-            conn.rollback()
+            connection.rollback()
             # traceback.print_exc()
             raise Exception(
                 f"Ops, fail to execute this command 💥 💔 💥\n{command}")
 
     def select(self, *, command: str):
-        """select data
+        """Select data
 
         :param command:
         :return:fetchdata，nlines = data，line number
         """
 
-        conn, cur = self.get_connect()
+        connection, cursor = self.get_connect()
         try:
-            nlines = cur.execute(command)
-            fetchdata = cur.fetchall()
+            nlines = cursor.execute(command)
+            fetchdata = cursor.fetchall()
             return fetchdata, nlines
-        except Exception as why:
-            raise why
+        except Exception as e:
+            raise e
 
     def select_count(self, table):
-        """ get the table's line number """
+        """Get the table's line number """
         COUNT_SQL = """SELECT COUNT(*) FROM {}""".format(table)
         return self.select(command=COUNT_SQL)[0][0][0]  # (((110,),), 1)
 
@@ -120,45 +105,44 @@ class mysql(object):
         parse_dates=None,
         columns=None,
     ):
-        """select data，return result as dataframe
+        """Select data，and format result into dataframe
 
         :param command:
         :param index_col: the index column
-        :param coerce_float:非常有用，将数字形式的字符串直接以float型读入
+        :param coerce_float: reading numeric strings directly as float
         :param params:
-        :param parse_dates:将某一列日期型字符串转换为datetime型数据，与pd.to_datetime函数功能类似。
-                                            可以直接提供需要转换的列名以默认的日期形式转换，也可以用字典的格式提供
-                                            列名和转换的日期格式，比如{column_name: format string}
-                                            （format string:"%Y:%m:%H:%M:%S"）
+        :param parse_dates: parse string into datetime
         :param columns:
-        :return:dataframe，columns
-        """
-        # return pd.read_sql(command, self.conn)
-        """To fix the bug:ValueError: unsupported format character 'Y' (0x59) at index 146
-
-       Reason:因为python执行的sql中存在类似DATE_FORMAT(CREATE_TIME, ‘%Y-%m-%d’) 的写法,
-    其中%Y与python的参数%s冲突
+        :return: dataframe，columns
         """
 
-        conn, cur = self.get_connect()
+        connection, cursor = self.get_connect()
         try:
+            # https://pandas.pydata.org/docs/reference/api/pandas.read_sql.html?highlight=read_sql#pandas.read_sql
             df = pd.read_sql(
                 command,
                 # , self.engine
-                conn,
+                connection,
                 index_col=index_col,
                 coerce_float=coerce_float,
                 params=params,
                 parse_dates=parse_dates,
                 columns=columns,
             )
-        except Exception as e:
+        except Exception:
+            """
+Fix ValueError: unsupported format character 'Y' (0x59) at index 146
+
+Reason:
+    When we insert time format like DATE_FORMAT(CREATE_TIME, '%Y-%m-%d'), 
+    which %xxx was conflicts with the Python argument %s
+            """
             command_parse = command.replace(
                 "%", "%%") if "%" in command else command
             df = pd.read_sql(
                 command_parse,
                 # , self.engine
-                conn,
+                connection,
                 index_col=index_col,
                 coerce_float=coerce_float,
                 params=params,
@@ -172,32 +156,18 @@ class mysql(object):
             return df, cols
         return df, cols
 
-    def select_all(self, table):
-        """select all data from table"""
-        SELECT_ALL = """SELECT * FROM {}""".format(table)
-        df, cols = self.select_as_df(command=SELECT_ALL)
-        return df, cols
-
     def truncate_table(self, table):
-        """truncate table's data, but keep the table structure
+        """Truncate table's data, but keep the table structure
 
         :param table:
         :return:
         """
-        TRUNCATE_SQL = """TRUNCATE {};""".format(table)
-        if self.execute(command=TRUNCATE_SQL):
-            Console().print(f"Table [bold cyan]{table}[/bold cyan] was "
-                            f"truncated ✨ 🍰 ✨")
+        TRUNCATE_TABLE = """TRUNCATE TABLE {};""".format(table)
+        if self.execute(command=TRUNCATE_TABLE):
+            Console().print(
+                f"Table [bold cyan]{table}[/bold cyan] was truncated ✨ 🍰 ✨")
 
-    def delete_through_time(self, table, fild, time):
-        """delete data through time"""
-
-        DELETE_SQL = """DELETE FROM  {}  WHERE {} < "{}";""".format(
-            table, fild, time)
-        if self.execute(command=DELETE_SQL):
-            Console().print(f"Well done ✨ 🍰 ✨")
-
-    def insert_one(self, table, data, cols, ignore=True):
+    def insert_one(self, table, data, cols, ignore=True, echo=False):
         """just insert data one piece at a time
 
         :param table:
@@ -217,7 +187,7 @@ class mysql(object):
                     INSERT INTO {}  ({})  VALUES {};
                     """.format(table, ",".join(["`%s`" % col for col in cols]),
                                data)
-        if self.execute(command=SQL_INSERT_ONE_DATA):
+        if self.execute(command=SQL_INSERT_ONE_DATA) and echo:
             Console().print("Well done ✨ 🍰 ✨")
 
     def insert_many(self, table, data: list, cols: list = [], ignore=True):
@@ -245,8 +215,8 @@ class mysql(object):
                                insert_many_data)
         if self.execute(command=SQL_INSERT_MANY_DATA):
             Console().print(
-                f"There are {len(data)} pieces of data has been inserted into "
-                f"table {table}✨ 🍰 ✨")
+                f"Table [cyan]{table}[/cyan] inserts [green]{len(data)}["
+                f"/green] records✨ 🍰 ✨")
 
     @deprecated
     def insert_many_old(self, table, data, cols):
@@ -273,16 +243,18 @@ class mysql(object):
             ",".join(["?" for i in range(len(cols))]),
         )
 
-        conn, cur = self.get_connect()
+        connection, cursor = self.get_connect()
         try:
-            cur.executemany(SQL_INSERT_MANY_DATA, data)
-            conn.commit()
-            Console().print("Table [bold cyan]{}[/bold cyan] successfully "
-                            "inserted data ✨ 🍰 ✨".format(table))
-        except Exception as e:
-            conn.rollback()
-            Console().print("[bold red]Failed to insert data[/bold red]💥 💔 "
-                            "💥\nReason:\n{}".format(e))
+            cursor.executemany(SQL_INSERT_MANY_DATA, data)
+            connection.commit()
+            Console().print(
+                "Table [bold cyan]{}[/bold cyan] successfully inserted data ✨ 🍰 ✨"
+                .format(table))
+        except Exception as why:
+            connection.rollback()
+            Console().print(
+                "[bold red]Ops, failed to insert data[/bold red]💥 💔 "
+                "💥\nReason:\n{}".format(why))
 
     def insert_df(
         self,
@@ -290,52 +262,58 @@ class mysql(object):
         df,
         cols: list,
         fillna=True,
-        what="",
+        what=np.nan,
         dropna=False,
         axis=0,
         how="any",
         inplace=True,
     ):
-        """insert dataframe to table
+        """Insert dataframe into table
 
         :param table:
         :param df: dataframe
         :param cols: columns
-        :param fillna:fill NA or not
-        :param what:if fillna is True, use what to fill the NA
-        :param dropna:drop NA or not
+        :param fillna: fill NA or not
+        :param what: if fillna is True, use what to fill the NA
+        :param dropna: whether or not to drop NA
         :param axis:
         :param how:
         :param inplace: replace original data or not
         :return:
         """
-        if dropna:
-            df.dropna(axis=axis, how=how, inplace=inplace)
-            # when we droped the nan, then don't need to fill nan
-            fillna = False
+        if df.empty:
+            Console().print('No input data 😅', style='red')
+        else:
+            if dropna:
+                df.dropna(axis=axis, how=how, inplace=inplace)
+                # when we droped the nan, then don't need to fill nan
+                fillna = False
 
-        # process dataframe column' type
-        for column in df.columns:
-            column_type = df[column].dtypes
-            handle_type = ["datetime64[ns]", "object"]
-            if column_type in handle_type:
-                df[column] = df[column].astype(str)
+            # process dataframe column' type
+            for column in df.columns:
+                column_type = df[column].dtypes
+                handle_type = ["datetime64[ns]", "object"]
+                if column_type in handle_type:
+                    df[column] = df[column].astype(str)
 
-        df_values = df[cols].fillna(what).values if fillna else df[cols].values
-        insertdata = [tuple(row) for row in df_values]
+            df_values = df[cols].fillna(
+                what).values if fillna else df[cols].values
+            insertdata = [tuple(row) for row in df_values]
 
-        self.insert_many(table=table, data=insertdata, cols=cols)
+            self.insert_many(table=table, data=insertdata, cols=cols)
 
-    def show_create_table(self, table):
-        """show create table command
+    def show_create_table(self, table, echo=True):
+        """Show create table command
 
         :param table:
         :return:
         """
 
         SQL = """SHOW CREATE TABLE {};""".format(table)
-        result = self.select(command=SQL)
-        return result[0][0][1]
+        result = self.select(command=SQL)[0][0][1]
+        if echo:
+            Console().print(result, style='green')
+        return result
 
     def create_tmp_table(self, table: str = "tmp_table"):
         """create an tmp table"""
@@ -370,12 +348,12 @@ class mysql(object):
         if ifnot in ['y', 'Y', 'yes'] or True:
             if self.execute(command=DROP_TABLE):
                 Console().print(
-                    f"[bold cyan]{table}[/bold cyan] was deleted ✨ "
-                    f"🍰 ✨")
+                    f"Table [bold cyan]{table}[/bold cyan] was deleted ✨ 🍰 ✨")
         else:
             Console().print("Think again...", style='green')
 
     def drop_column(self, table: str, column: str):
+        """Delete column"""
 
         DROP_COLUMN = """ALTER TABLE {} DROP COLUMN {} ;""".format(
             table, column)
@@ -419,7 +397,7 @@ class mysql(object):
             Console().print(f"Added column {column} to {table}✨ 🍰 ✨")
 
     def add_primary_key(self, table: str, keys: list):
-        """set primary key
+        """Set primary key
 
         :param table:
         :param column:
@@ -440,6 +418,7 @@ class mysql(object):
                 f"Added column {','.join(keys)} to primary key✨ 🍰 ✨")
 
     def alter_table_comment(self, table: str, comment: str):
+        """Alter table's comment"""
 
         ALTER_TABLE_COMMENT = """ALTER TABLE {} COMMENT '{}' ;""".format(
             table, comment)
@@ -447,8 +426,9 @@ class mysql(object):
             Console().print("Table comment added successfully ✨ 🍰 ✨")
 
     def alter_table_name(self, table: str, newname: str):
-        """alter table name
-        ALTER TABLE 旧表名 RENAME TO 新表名 ;
+        """Alter table's name
+
+        ALTER TABLE `table` RENAME TO [new table] ;
         :param table:
         :param newname:
         :return:
@@ -457,19 +437,21 @@ class mysql(object):
         ALTER_TABLE_NAME = """ALTER TABLE {} RENAME TO {} ;""".format(
             table, newname)
         if self.execute(command=ALTER_TABLE_NAME):
-            Console().print("Successfully renamed the table {} to {}✨ 🍰 "
-                            "✨".format(table, newname))
+            Console().print(
+                "Successfully renamed the table {} to {}✨ 🍰 ✨".format(
+                    table, newname))
 
     def alter_column_name(self, table: str, column: str, newcolumn: str,
                           newtype: str):
-        """alter column name
+        """Alter column's name
 
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        ALTER  TABLE 表名 CHANGE [column] 旧字段名 新字段名 新数据类型;
-        alter  table table1 change column1 column1 varchar(100) DEFAULT 1.2 COMMENT '注释'; -- 正常，此时字段名称没有改变，能修改字段类型、类型长度、默认值、注释
-        alter  table table1 change column1 column2 decimal(10,1) DEFAULT NULL COMMENT '注释' -- 正常，能修改字段名、字段类型、类型长度、默认值、注释
+        ALTER  TABLE `table` CHANGE [column] [new column] [new type];
+
         :param table:
         :param column:
+        :param newcolumn:
+        :param newtype:
         :return:
         """
 
@@ -487,7 +469,7 @@ class mysql(object):
         defaultnull: bool = True,
         comment: str = None,
     ):
-        """modify field type, length, default value, comment
+        """Alter table's field type, length, default value, comment...
 
 ALTER  TABLE `table` MODIFY [COLUMN] field_name new_data_type new_type_length
 new_default_value new_comment;
@@ -509,7 +491,8 @@ new_default_value new_comment;
                      primary_key=None,
                      dtypes={},
                      deduce_type=False):
-        r'''
+        r'''Create table from dataframe
+
 Pandas supported data types:
 float、int、bool、datetime64[ns]、datetime64[ns, tz]、timedelta[ns]、category、object
     >>> mysql_client = sqlstar.mysql(...)
@@ -543,9 +526,10 @@ float、int、bool、datetime64[ns]、datetime64[ns, tz]、timedelta[ns]、categ
                 df = df.convert_dtypes()
             cols = df.columns.tolist()
 
-            # If there is no ID, add a self-added ID
-            if not 'id' in cols and not primary_key:
-                PREFIX_SQL += '''`id` INT AUTO_INCREMENT PRIMARY KEY COMMENT 'id','''
+            # if there is no ID, add a self-increased ID
+            if ('id' not in cols) or ('id' not in primary_key):
+                PREFIX_SQL += '''`id` INT AUTO_INCREMENT COMMENT 'id','''
+                # PREFIX_SQL += '''`id` INT AUTO_INCREMENT PRIMARY KEY COMMENT 'id','''
 
             ADDS = []
             for col in cols:
@@ -555,25 +539,6 @@ float、int、bool、datetime64[ns]、datetime64[ns, tz]、timedelta[ns]、categ
                 for key, comment in comments.items():
                     if str(col).strip().lower() == str(key).strip().lower():
                         COMMENT = f' COMMENT "{comment}"'
-
-                def check_dtype(pdtype):
-                    if str(pdtype).__contains__("int"):
-                        return 'INT'
-                    elif str(pdtype).__contains__("float"):
-                        # Decimal is more precise than float
-                        return 'DECIMAL(19,6)'
-                    elif str(pdtype).__contains__("bool"):
-                        return 'VARCHAR(18)'
-                    elif str(pdtype).__contains__("datetime"):
-                        return 'DATETIME'
-                    elif str(pdtype).__contains__("timedelta"):
-                        return 'TIMESTAMP'
-                    elif str(pdtype).__contains__("category"):
-                        return 'VARCHAR(18)'
-                    elif str(pdtype).__contains__("object"):
-                        return 'VARCHAR(500)'
-                    else:
-                        return 'VARCHAR(100)'
 
                 USER_TYPE = False
                 for key, dtype in types.items():
@@ -585,21 +550,30 @@ float、int、bool、datetime64[ns]、datetime64[ns, tz]、timedelta[ns]、categ
 
                 ADDS.append(f'''`{col}` {DTYPE} {COMMENT}''')
 
-            SQL = PREFIX_SQL + ','.join(ADDS) + SUFIX_SQL
-            self.execute(command=SQL)
+            PRIMARY_SQL = f' ,PRIMARY KEY (`id`)'
+            if not primary_key or primary_key == 'id':
+                pass
+            elif isinstance(primary_key, str):
+                PRIMARY_SQL = f' ,PRIMARY KEY (`id`, `{primary_key}`)'
+            elif isinstance(primary_key, (list, tuple)):
+                PRIMARY_SQL = f' ,PRIMARY KEY (`id`, `{"`,`".join(primary_key)}`)'
 
-        except:
-            DROP_TABLE = f"DROP TABLE `{table}`;"
-            self.execute(command=DROP_TABLE)
+            CREATE_TABLE = PREFIX_SQL + ','.join(
+                ADDS) + PRIMARY_SQL + SUFIX_SQL
 
-    def commit(self, command: str):
-        self.cur.execute(command)
-        self.conn.commit()
+            self.execute(command=CREATE_TABLE)
+            Console().print(
+                f"Table [blod cyan]{table}[/blod cyan] was created ✨ 🍰 ✨")
+
+        except Exception as why:
+            Console().print(f"Failed to create table {table} 👀\n{why}",
+                            style='red')
 
     def close(self):
         try:
-            self.conn.commit()
-            self.conn.close()
-            Console().print("Database connection closed, bye...😴")
+            self.connection.commit()
+            self.connection.close()
+            Console().print("Database connection closed, bye...😴",
+                            style='white')
         except:
             pass
