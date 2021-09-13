@@ -67,9 +67,12 @@ class mysql(object):
         """
         connection, cursor = self.get_connect()
         try:
-            cursor.execute(command)
+            result = cursor.execute(command)
             connection.commit()
-            return True
+            if result:
+                return result
+            else:
+                return True
         except:
             connection.rollback()
             # traceback.print_exc()
@@ -93,8 +96,8 @@ class mysql(object):
 
     def select_count(self, table):
         """Get the table's line number """
-        COUNT_SQL = """SELECT COUNT(*) FROM {}""".format(table)
-        return self.select(command=COUNT_SQL)[0][0][0]  # (((110,),), 1)
+        COUNT = """SELECT COUNT(*) FROM {}""".format(table)
+        return self.select(command=COUNT)[0][0][0]  # (((110,),), 1)
 
     def select_as_df(
         self,
@@ -131,11 +134,12 @@ class mysql(object):
             )
         except Exception:
             """
-Fix ValueError: unsupported format character 'Y' (0x59) at index 146
+Fix ValueError: 
+        unsupported format character 'Y' (0x59) at index 146
 
 Reason:
-    When we insert time format like DATE_FORMAT(CREATE_TIME, '%Y-%m-%d'), 
-    which %xxx was conflicts with the Python argument %s
+        When we insert time format like DATE_FORMAT(CREATE_TIME, '%Y-%m-%d'), 
+        which %xxx was conflicts with the Python argument %s
             """
             command_parse = command.replace(
                 "%", "%%") if "%" in command else command
@@ -178,16 +182,16 @@ Reason:
         """
 
         if ignore:
-            SQL_INSERT_ONE_DATA = """
+            INSERT_ONE_DATA = """
                     INSERT IGNORE INTO {}  ({})  VALUES {};
                     """.format(table, ",".join(["`%s`" % col for col in cols]),
                                data)
         else:
-            SQL_INSERT_ONE_DATA = """
+            INSERT_ONE_DATA = """
                     INSERT INTO {}  ({})  VALUES {};
                     """.format(table, ",".join(["`%s`" % col for col in cols]),
                                data)
-        if self.execute(command=SQL_INSERT_ONE_DATA) and echo:
+        if self.execute(command=INSERT_ONE_DATA) and echo:
             Console().print("Well done ✨ 🍰 ✨")
 
     def insert_many(self, table, data: list, cols: list = [], ignore=True):
@@ -200,42 +204,41 @@ Reason:
         :return:
         """
 
-        # 将list格式数据转成(),()...,()这种正确的sql插入语法格式
+        # Convert list data into SQL insert syntax format: (.),(.)... ,(.)
         insert_many_data = ",".join(str(i) for i in data)
 
         if ignore:
-            SQL_INSERT_MANY_DATA = """
+            INSERT_MANY_DATA = """
                     INSERT IGNORE INTO {}  ({})  VALUES {};
                     """.format(table, ",".join(["`%s`" % col for col in cols]),
                                insert_many_data)
         else:
-            SQL_INSERT_MANY_DATA = """
+            INSERT_MANY_DATA = """
                     INSERT INTO {}  ({})  VALUES {};
                     """.format(table, ",".join(["`%s`" % col for col in cols]),
                                insert_many_data)
-        if self.execute(command=SQL_INSERT_MANY_DATA):
+        if self.execute(command=INSERT_MANY_DATA):
             Console().print(
                 f"Table [cyan]{table}[/cyan] inserts [green]{len(data)}["
                 f"/green] records✨ 🍰 ✨")
 
     @deprecated
     def insert_many_old(self, table, data, cols):
-        """insert many data（保留此方法仅供参考）
+        """Insert many data(This method is reserved for reference only)
 
-        此方法容易引发如下错误:
+        This method may brought out the following errors:
                         TypeError: not all arguments converted during string formatting
-        原因见:
+        Reason references:
                         https://blog.csdn.net/weixin_40580582/article/details/101032556
                         https://www.codeleading.com/article/50852193159/
 
-        新增多条数据:
-        :param table: 要插入的表名
-        :param data: 要插入的数据
-        :param cols: 一个列名的list
+        :param table:
+        :param data:
+        :param cols:
         :return:
         """
 
-        SQL_INSERT_MANY_DATA = """
+        INSERT_MANY_DATA = """
                                             INSERT IGNORE INTO `{}` ({}) VALUES ({});
                                             """.format(
             table,
@@ -245,11 +248,11 @@ Reason:
 
         connection, cursor = self.get_connect()
         try:
-            cursor.executemany(SQL_INSERT_MANY_DATA, data)
+            cursor.executemany(INSERT_MANY_DATA, data)
             connection.commit()
             Console().print(
-                "Table [bold cyan]{}[/bold cyan] successfully inserted data ✨ 🍰 ✨"
-                .format(table))
+                "Table [bold cyan]{}[/bold cyan] inserted data ✨ 🍰 ✨".format(
+                    table))
         except Exception as why:
             connection.rollback()
             Console().print(
@@ -315,30 +318,13 @@ Reason:
             Console().print(result, style='green')
         return result
 
-    def create_tmp_table(self, table: str = "tmp_table"):
-        """create an tmp table"""
-        CREATE_TMP_TABLE = """
-    CREATE TABLE IF NOT EXISTS `{}` (
-      `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
-      `name` varchar(50) NOT NULL COMMENT 'name',
-      `position` varchar(50) NOT NULL COMMENT 'job',
-      `erp` varchar(50) NOT NULL COMMENT 'erp  account',
-      `created_time` datetime DEFAULT NULL COMMENT 'create time',
-      `updated_time` datetime DEFAULT NULL COMMENT 'update time',
-      PRIMARY KEY (`id`)
-    ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COMMENT='white list table' 
-    """.format(table)
-        if self.execute(command=CREATE_TMP_TABLE):
-            Console().print(f"Table [bold cyan]{table}[/bold cyan] was "
-                            f"created  ✨ 🍰 ✨")
-
     def drop_table(self, table: str = None, sure=False):
 
         DROP_TABLE = f"""DROP TABLE IF EXISTS `{table}`;"""
-        df, cols = self.select_as_df(f'''select * from {table} limit 10''')
+        df, cols = self.select_as_df(f'''SELECT * FROM {table} LIMIT 10''')
 
         ifnot = True
-        # If the table is not empty or requires validation, warning user
+        # if the table is not empty or requires validation, warning user
         if sure or not df.empty:
             Console().print(
                 f"Are you sure to delete the table [bold red]{table}[/bold red] ?"
@@ -369,18 +355,20 @@ Reason:
         comment: str = None,
         after: str = None,
     ):
-        """ALTER TABLE 表名 ADD [COLUMN] 字段名 字段类型 是否可为空 COMMENT '注释' AFTER 指定某字段 ;--COLUMN关键字可以省略不写
+        """Add new column
 
         :param table:
         :param column:
         :param newtype:
         :param comment:
-        :param after:
+        :param after: insert column after which column, the default is insert
+                                into the end
         :return:
         """
         MYSQL_KEYWORDS = ["CHANGE", "SCHEMA", "DEFAULT"]
         if column.upper() in MYSQL_KEYWORDS:
-            Console().print("%(column)s 是SQL关键字或保留字，请使用其他字段名💥 💔 💥\n" %
+            Console().print("%(column)s was SQL keyword or reserved word, "
+                            "please use a different column name😯\n" %
                             {"column": column},
                             style='red')
             sys.exit(1)
@@ -404,12 +392,16 @@ Reason:
         :return:
         """
 
-        # try:
-        #     # 如果原先有主键，要先删除原先的主键
-        #     DROP_PRIMARIY_KEY = f'ALTER TABLE {table} DROP PRIMARY KEY;'
-        #     cls.execute(command=DROP_PRIMARIY_KEY)
-        # except:
-        #     pass
+        result = self.execute(f'''SELECT COUNT(*) PrimaryNum
+                            FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE t
+                            WHERE t.TABLE_NAME ="{table}"''')
+        if result >= 1:
+            try:
+                # if there is a primary key, delete the original primary key first
+                DROP_PRIMARIY_KEY = f'ALTER TABLE {table} DROP PRIMARY KEY;'
+                self.execute(command=DROP_PRIMARIY_KEY)
+            except:
+                pass
 
         ADD_PRIMARY_KEY = """ALTER TABLE {} ADD PRIMARY KEY ({});""".format(
             table, ", ".join(keys))
@@ -423,7 +415,7 @@ Reason:
         ALTER_TABLE_COMMENT = """ALTER TABLE {} COMMENT '{}' ;""".format(
             table, comment)
         if self.execute(command=ALTER_TABLE_COMMENT):
-            Console().print("Table comment added successfully ✨ 🍰 ✨")
+            Console().print("Table comment added ✨ 🍰 ✨")
 
     def alter_table_name(self, table: str, newname: str):
         """Alter table's name
@@ -437,9 +429,8 @@ Reason:
         ALTER_TABLE_NAME = """ALTER TABLE {} RENAME TO {} ;""".format(
             table, newname)
         if self.execute(command=ALTER_TABLE_NAME):
-            Console().print(
-                "Successfully renamed the table {} to {}✨ 🍰 ✨".format(
-                    table, newname))
+            Console().print("Renamed the table {} to {}✨ 🍰 ✨".format(
+                table, newname))
 
     def alter_column_name(self, table: str, column: str, newcolumn: str,
                           newtype: str):
@@ -458,7 +449,7 @@ Reason:
         ALTER_COLUMN_NAME = """ALTER  TABLE {} CHANGE COLUMN {} {} {};""".format(
             table, column, newcolumn, newtype if newtype else "")
         if self.execute(command=ALTER_COLUMN_NAME):
-            Console().print("Successfully changed field {} to {} ✨ 🍰 ✨".format(
+            Console().print("Changed field {} to {} ✨ 🍰 ✨".format(
                 column, newcolumn))
 
     def alter_column_attribute(
@@ -481,8 +472,9 @@ new_default_value new_comment;
         ALTER_COLUMN_ATTRIBUTE = """ALTER  TABLE {} MODIFY {} {} {} {};""".format(
             table, column, newtype, about_default, comment)
         if self.execute(command=ALTER_COLUMN_ATTRIBUTE):
-            Console().print("The field [bold cyan]{}[/bold cyan]'s property "
-                            "was successfully modified ✨ 🍰 ✨".format(column))
+            Console().print(
+                "The column [bold cyan]{}[/bold cyan]'s property was modified "
+                "✨ 🍰 ✨".format(column))
 
     def create_table(self,
                      table,
