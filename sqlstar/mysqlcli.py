@@ -35,9 +35,9 @@ class mysql(object):
         assert self.db, "db is required"
 
         # Connect to the database during initialization
-        self.connection, self.cursor = self.initializeDB()
+        self.connection, self.cursor = self.initialize()
 
-    def initializeDB(self):
+    def initialize(self):
         """Initialize mysql"""
         try:
             connection = pymysql.connect(
@@ -59,7 +59,7 @@ class mysql(object):
     def get_connect(self):
         """Get connection and cursor"""
         if not self.connection.open:
-            self.connection, self.cursor = self.initializeDB()
+            self.connection, self.cursor = self.initialize()
         return self.connection, self.cursor
 
     def execute(self, command: str):
@@ -102,6 +102,7 @@ class mysql(object):
     def select_as_df(
         self,
         command,
+        fname=None,
         index_col=None,
         coerce_float=True,
         params=None,
@@ -111,6 +112,7 @@ class mysql(object):
         """Select data，and format result into dataframe
 
         :param command:
+        :param fname: export result file name
         :param index_col: the index column
         :param coerce_float: reading numeric strings directly as float
         :param params:
@@ -124,7 +126,6 @@ class mysql(object):
             # https://pandas.pydata.org/docs/reference/api/pandas.read_sql.html?highlight=read_sql#pandas.read_sql
             df = pd.read_sql(
                 command,
-                # , self.engine
                 connection,
                 index_col=index_col,
                 coerce_float=coerce_float,
@@ -145,7 +146,6 @@ Reason:
                 "%", "%%") if "%" in command else command
             df = pd.read_sql(
                 command_parse,
-                # , self.engine
                 connection,
                 index_col=index_col,
                 coerce_float=coerce_float,
@@ -155,6 +155,9 @@ Reason:
             )
         cols = df.columns.tolist()
         data_count = df.shape
+
+        if fname:
+            df.to_csv(fname, encoding='utf-8')
 
         if data_count[0] == 0:
             return df, cols
@@ -228,7 +231,7 @@ Reason:
 
         This method may brought out the following errors:
                         TypeError: not all arguments converted during string formatting
-        Reason references:
+        References:
                         https://blog.csdn.net/weixin_40580582/article/details/101032556
                         https://www.codeleading.com/article/50852193159/
 
@@ -395,6 +398,7 @@ Reason:
         result = self.execute(f'''SELECT COUNT(*) PrimaryNum
                             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE t
                             WHERE t.TABLE_NAME ="{table}"''')
+        # TODO: process result
         if result >= 1:
             try:
                 # if there is a primary key, delete the original primary key first
