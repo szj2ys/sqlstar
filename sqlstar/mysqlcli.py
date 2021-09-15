@@ -541,11 +541,11 @@ float、int、bool、datetime64[ns]、datetime64[ns, tz]、timedelta[ns]、categ
                 dtype = types.get(col, None) if comments else None
 
                 if dtype:
-                    ADDS.append(f'''`{col}` {dtype}  COMMENT "{comment}"''')
+                    ADDS.append(f'''`{col}` {dtype} COMMENT "{comment}"''')
                 else:
                     infer_dtype = check_dtype(df[col].dtypes)
                     ADDS.append(
-                        f'''`{col}` {infer_dtype}  COMMENT "{comment}"''')
+                        f'''`{col}` {infer_dtype} COMMENT "{comment}"''')
 
             PRIMARY_SQL = f' ,PRIMARY KEY (`id`)'
             if not primary_key or primary_key == 'id':
@@ -554,6 +554,8 @@ float、int、bool、datetime64[ns]、datetime64[ns, tz]、timedelta[ns]、categ
                 PRIMARY_SQL = f' ,PRIMARY KEY (`id`, `{primary_key}`)'
             elif isinstance(primary_key, (list, tuple)):
                 PRIMARY_SQL = f' ,PRIMARY KEY (`id`, `{"`,`".join(primary_key)}`)'
+            else:
+                pass
 
             CREATE_TABLE = PREFIX_SQL + ','.join(
                 ADDS) + PRIMARY_SQL + SUFIX_SQL
