@@ -92,8 +92,8 @@ class mysql(object):
             nlines = cursor.execute(command)
             fetchdata = cursor.fetchall()
             return fetchdata, nlines
-        except Exception as e:
-            raise e
+        except Exception:
+            traceback.print_exc()
 
     def select_count(self, table):
         """Get the table's line number """
@@ -264,9 +264,10 @@ Reason:
                     table))
         except Exception as why:
             connection.rollback()
-            Console().print(
-                "[bold red]Ops, failed to insert data[/bold red]💥 💔 "
-                "💥\nReason:\n{}".format(why))
+            traceback.print_exc()
+            # Console().print(
+            #     "[bold red]Ops, failed to insert data[/bold red]💥 💔 "
+            #     "💥\nReason:\n{}".format(why))
 
     def insert_df(
         self,
@@ -515,8 +516,8 @@ float、int、bool、datetime64[ns]、datetime64[ns, tz]、timedelta[ns]、categ
                               ["grow_stand", "robust_group", "grow_group"],
                           })
         '''
-        PREFIX_SQL = f'''CREATE TABLE IF NOT EXISTS `{table}` ('''
-        SUFIX_SQL = ''') DEFAULT CHARSET=utf8mb4;'''
+        PREFIX = f'''CREATE TABLE IF NOT EXISTS `{table}` ('''
+        SUFIX = ''') DEFAULT CHARSET=utf8mb4;'''
 
         types = {}
         if dtypes:
@@ -531,34 +532,33 @@ float、int、bool、datetime64[ns]、datetime64[ns, tz]、timedelta[ns]、categ
 
             # if there is no ID, add a self-increased ID
             if ('id' not in cols) or ('id' not in primary_key):
-                PREFIX_SQL += '''`id` INT AUTO_INCREMENT COMMENT 'id','''
-                # PREFIX_SQL += '''`id` INT AUTO_INCREMENT PRIMARY KEY COMMENT 'id','''
+                PREFIX += '''`id` INT AUTO_INCREMENT COMMENT 'id','''
+                # PREFIX += '''`id` INT AUTO_INCREMENT PRIMARY KEY COMMENT 'id','''
 
-            ADDS = []
+            COLUMNS = []
 
             for col in cols:
                 comment = comments.get(col, "...") if comments else "..."
                 dtype = types.get(col, None) if comments else None
 
                 if dtype:
-                    ADDS.append(f'''`{col}` {dtype} COMMENT "{comment}"''')
+                    COLUMNS.append(f'''`{col}` {dtype} COMMENT "{comment}"''')
                 else:
                     infer_dtype = check_dtype(df[col].dtypes)
-                    ADDS.append(
+                    COLUMNS.append(
                         f'''`{col}` {infer_dtype} COMMENT "{comment}"''')
 
-            PRIMARY_SQL = f' ,PRIMARY KEY (`id`)'
+            PRIMARY_SEG = f' ,PRIMARY KEY (`id`)'
             if not primary_key or primary_key == 'id':
                 pass
             elif isinstance(primary_key, str):
-                PRIMARY_SQL = f' ,PRIMARY KEY (`id`, `{primary_key}`)'
+                PRIMARY_SEG = f' ,PRIMARY KEY (`id`, `{primary_key}`)'
             elif isinstance(primary_key, (list, tuple)):
-                PRIMARY_SQL = f' ,PRIMARY KEY (`id`, `{"`,`".join(primary_key)}`)'
+                PRIMARY_SEG = f' ,PRIMARY KEY (`id`, `{"`,`".join(primary_key)}`)'
             else:
                 pass
 
-            CREATE_TABLE = PREFIX_SQL + ','.join(
-                ADDS) + PRIMARY_SQL + SUFIX_SQL
+            CREATE_TABLE = PREFIX + ','.join(COLUMNS) + PRIMARY_SEG + SUFIX
 
             self.execute(command=CREATE_TABLE)
             Console().print(
