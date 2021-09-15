@@ -60,6 +60,27 @@ or
 data, nlines = mysql.select(command='''SELECT * FROM table LIMIT 10''')
 ```
 
+### Create table
+```python
+mysql = sqlstar.mysql(...)
+mysql.create_table(table='quant_news_analyse',
+                          df=df,
+                          comments={
+                              "date_time": "日期",
+                              "robust_stand": "稳健基准",
+                              "grow_stand": "成长型基准",
+                              "robust_group": "稳健型组合",
+                              "grow_group": "成长型组合",
+                          },
+                          dtypes={
+                              "datetime": ["pub_date", "update_time"],
+                              "longtext": ["content"],
+                              "varchar(100)": ["title"],
+                              "decimal(10, 3)":
+                              ["grow_stand", "robust_group", "grow_group"],
+                          })
+```
+
 ## MySQL to SQLite3
 
 Transfer data from MySQL to SQLite.
