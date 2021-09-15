@@ -9,6 +9,7 @@ import pymysql, sys
 import pandas as pd
 import numpy as np
 from toolz import merge
+from typing import Optional, Union
 
 from sqlstar.utils import deprecated, check_dtype
 
@@ -157,7 +158,12 @@ Reason:
         data_count = df.shape
 
         if fname:
-            df.to_csv(fname, encoding='utf-8')
+            if '.csv' in fname:
+                df.to_csv(fname, encoding='utf-8', index=False)
+            elif '.xlsx' in fname:
+                df.to_excel(fname, encoding='utf-8', index=False)
+            elif '.json' in fname:
+                df.to_json(fname, index=False)
 
         if data_count[0] == 0:
             return df, cols
@@ -288,7 +294,7 @@ Reason:
         :return:
         """
         if df.empty:
-            Console().print('No input data 😅', style='red')
+            Console().print('There seems to be no data😅', style='red')
         else:
             if dropna:
                 df.dropna(axis=axis, how=how, inplace=inplace)
@@ -483,9 +489,9 @@ new_default_value new_comment;
     def create_table(self,
                      table,
                      df: pd.DataFrame,
-                     comments={},
-                     primary_key=None,
-                     dtypes={},
+                     comments: dict = None,
+                     primary_key: Union[str, list, tuple] = None,
+                     dtypes: dict = None,
                      deduce_type=False):
         r'''Create table from dataframe
 
@@ -513,8 +519,9 @@ float、int、bool、datetime64[ns]、datetime64[ns, tz]、timedelta[ns]、categ
         SUFIX_SQL = ''') DEFAULT CHARSET=utf8mb4;'''
 
         types = {}
-        for dtype, colist in dtypes.items():
-            types = merge(types, {col: dtype for col in colist})
+        if dtypes:
+            for dtype, colist in dtypes.items():
+                types = merge(types, {col: dtype for col in colist})
 
         try:
             if deduce_type:
@@ -528,23 +535,17 @@ float、int、bool、datetime64[ns]、datetime64[ns, tz]、timedelta[ns]、categ
                 # PREFIX_SQL += '''`id` INT AUTO_INCREMENT PRIMARY KEY COMMENT 'id','''
 
             ADDS = []
+
             for col in cols:
-                COMMENT = ' COMMENT ""'
-                DTYPE = None
+                comment = comments.get(col, "...") if comments else "..."
+                dtype = types.get(col, None) if comments else None
 
-                for key, comment in comments.items():
-                    if str(col).strip().lower() == str(key).strip().lower():
-                        COMMENT = f' COMMENT "{comment}"'
-
-                USER_TYPE = False
-                for key, dtype in types.items():
-                    if str(col).strip().lower() == str(key).strip().lower():
-                        DTYPE = dtype
-                        USER_TYPE = True
-                if not USER_TYPE:
-                    DTYPE = check_dtype(df[col].dtypes)
-
-                ADDS.append(f'''`{col}` {DTYPE} {COMMENT}''')
+                if dtype:
+                    ADDS.append(f'''`{col}` {dtype}  COMMENT "{comment}"''')
+                else:
+                    infer_dtype = check_dtype(df[col].dtypes)
+                    ADDS.append(
+                        f'''`{col}` {infer_dtype}  COMMENT "{comment}"''')
 
             PRIMARY_SQL = f' ,PRIMARY KEY (`id`)'
             if not primary_key or primary_key == 'id':
@@ -561,9 +562,8 @@ float、int、bool、datetime64[ns]、datetime64[ns, tz]、timedelta[ns]、categ
             Console().print(
                 f"Table [blod cyan]{table}[/blod cyan] was created ✨ 🍰 ✨")
 
-        except Exception as why:
-            Console().print(f"Failed to create table {table} 👀\n{why}",
-                            style='red')
+        except Exception:
+            traceback.print_exc()
 
     def close(self):
         try:

@@ -23,7 +23,7 @@ def check_dtype(pdtype):
     elif str(pdtype).__contains__("category"):
         return 'VARCHAR(18)'
     elif str(pdtype).__contains__("object"):
-        return 'VARCHAR(100)'
+        return 'VARCHAR(50)'
     else:
         return 'VARCHAR(50)'
 

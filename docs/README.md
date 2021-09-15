@@ -3,7 +3,7 @@
 </p>
 
 <h3 align="center">
-    <p>Awesome SQL client you are waiting for ✨</p>
+    <p>🛠Awesome SQL toolkits you are waiting for ✨</p>
 </h3>
 
 
