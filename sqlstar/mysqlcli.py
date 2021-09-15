@@ -104,6 +104,8 @@ class mysql(object):
         self,
         command,
         fname=None,
+        sep=',',
+        header=True,
         index_col=None,
         coerce_float=True,
         params=None,
@@ -159,9 +161,16 @@ Reason:
 
         if fname:
             if '.csv' in fname:
-                df.to_csv(fname, encoding='utf-8', index=False)
+                df.to_csv(fname,
+                          encoding='utf-8',
+                          sep=sep,
+                          header=header,
+                          index=False)
             elif '.xlsx' in fname:
-                df.to_excel(fname, encoding='utf-8', index=False)
+                df.to_excel(fname,
+                            encoding='utf-8',
+                            header=header,
+                            index=False)
             elif '.json' in fname:
                 df.to_json(fname, index=False)
 
