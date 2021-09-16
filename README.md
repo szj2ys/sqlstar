@@ -63,23 +63,28 @@ data, nlines = mysql.select(command='''SELECT * FROM table LIMIT 10''')
 ### Create table
 ```python
 mysql = sqlstar.mysql(...)
-mysql.create_table(table='quant_news_analyse',
-                          df=df,
-                          comments={
-                              "date_time": "日期",
-                              "robust_stand": "稳健基准",
-                              "grow_stand": "成长型基准",
-                              "robust_group": "稳健型组合",
-                              "grow_group": "成长型组合",
-                          },
-                          dtypes={
-                              "datetime": ["pub_date", "update_time"],
-                              "longtext": ["content"],
-                              "varchar(100)": ["title"],
-                              "decimal(10, 3)":
-                              ["grow_stand", "robust_group", "grow_group"],
-                          })
+mysql.create_table(
+    table='news_spider',
+    df=df,
+    comments={
+        "create_time": "插入时间",
+        "title": "标题",
+        "content": "正文",
+        "author": "作者",
+        "publish_time": "发布时间",
+        "read_num": "阅读量",
+    },
+    # if type is not given, SQLStar will automatically inference
+    dtypes={
+        "datetime": ["create_time", "publish_time"],
+        "longtext": ["content"],
+        "varchar(100)": ["title", "author"],
+        "decimal(10, 3)": ["read_num"]
+    })
 ```
+You don't need to fill in everything, and you just need to fill in 
+comment or data type that you want to specify, then 
+SQLStar will do the rest for you.
 
 ## MySQL to SQLite3
 

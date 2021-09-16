@@ -10,7 +10,10 @@ import pandas as pd
 import numpy as np
 from toolz import merge
 from typing import Optional, Union
+import warnings
 
+warnings.filterwarnings('ignore')
+warnings.simplefilter('ignore')
 from sqlstar.utils import deprecated, check_dtype
 
 
@@ -507,23 +510,7 @@ new_default_value new_comment;
 
 Pandas supported data types:
 float、int、bool、datetime64[ns]、datetime64[ns, tz]、timedelta[ns]、category、object
-    >>> mysql_client = sqlstar.mysql(...)
-    >>> mysql_client.create_table(table='quant_news_analyse',
-                          df=df,
-                          comments={
-                              "date_time": "日期",
-                              "robust_stand": "稳健基准",
-                              "grow_stand": "成长型基准",
-                              "robust_group": "稳健型组合",
-                              "grow_group": "成长型组合",
-                          },
-                          dtypes={
-                              "datetime": ["pub_date", "update_time"],
-                              "longtext": ["content"],
-                              "varchar(100)": ["title"],
-                              "decimal(10, 3)":
-                              ["grow_stand", "robust_group", "grow_group"],
-                          })
+
         '''
         PREFIX = f'''CREATE TABLE IF NOT EXISTS `{table}` ('''
         SUFIX = ''') DEFAULT CHARSET=utf8mb4;'''
