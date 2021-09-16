@@ -319,7 +319,8 @@ Reason:
                 column_type = df[column].dtypes
                 handle_type = ["datetime64[ns]", "object"]
                 if column_type in handle_type:
-                    df[column] = df[column].astype(str)
+                    # df[column] = df[column].astype(str)
+                    df.loc[:, column] = df.loc[:, column].astype(str)
 
             df_values = df[cols].fillna(
                 what).values if fillna else df[cols].values
