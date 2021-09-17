@@ -8,6 +8,7 @@ from rich.console import Console
 import pymysql, sys
 import pandas as pd
 import numpy as np
+import click
 from toolz import merge
 from typing import Optional, Union
 import warnings
@@ -79,9 +80,7 @@ class mysql(object):
                 return True
         except:
             connection.rollback()
-            # traceback.print_exc()
-            raise Exception(
-                f"Ops, fail to execute this command 💥 💔 💥\n{command}")
+            traceback.print_exc()
 
     def select(self, *, command: str):
         """Select data
@@ -287,7 +286,8 @@ Reason:
         df,
         cols: list,
         fillna=True,
-        what=np.nan,
+        what="",
+        # what=np.nan,
         dropna=False,
         axis=0,
         how="any",
@@ -314,7 +314,7 @@ Reason:
                 # when we droped the nan, then don't need to fill nan
                 fillna = False
 
-            # process dataframe column' type
+            # process dataframe column's type
             for column in df.columns:
                 column_type = df[column].dtypes
                 handle_type = ["datetime64[ns]", "object"]
@@ -346,15 +346,13 @@ Reason:
         DROP_TABLE = f"""DROP TABLE IF EXISTS `{table}`;"""
         df, cols = self.select_as_df(f'''SELECT * FROM {table} LIMIT 10''')
 
-        ifnot = True
+        confirm = True
         # if the table is not empty or requires validation, warning user
         if sure or not df.empty:
-            Console().print(
-                f"Are you sure to delete the table [bold red]{table}[/bold red] ?"
-            )
-            ifnot = input(" (Y/n):")
+            confirm = click.confirm(
+                f"Are you sure to delete the table {table} ?", default=False)
 
-        if ifnot in ['y', 'Y', 'yes'] or True:
+        if confirm:
             if self.execute(command=DROP_TABLE):
                 Console().print(
                     f"Table [bold cyan]{table}[/bold cyan] was deleted ✨ 🍰 ✨")
@@ -407,7 +405,8 @@ Reason:
         if self.execute(command=ADD_COLUMN):
             Console().print(f"Added column {column} to {table}✨ 🍰 ✨")
 
-    def add_primary_key(self, table: str, keys: list):
+    def add_primary_key(self, table: str, primary_key: Union[str, list,
+                                                             tuple]):
         """Set primary key
 
         :param table:
@@ -418,20 +417,21 @@ Reason:
         result = self.execute(f'''SELECT COUNT(*) PrimaryNum
                             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE t
                             WHERE t.TABLE_NAME ="{table}"''')
-        # TODO: process result
-        if result >= 1:
-            try:
-                # if there is a primary key, delete the original primary key first
-                DROP_PRIMARIY_KEY = f'ALTER TABLE {table} DROP PRIMARY KEY;'
-                self.execute(command=DROP_PRIMARIY_KEY)
-            except:
-                pass
 
-        ADD_PRIMARY_KEY = """ALTER TABLE {} ADD PRIMARY KEY ({});""".format(
-            table, ", ".join(keys))
-        if self.execute(command=ADD_PRIMARY_KEY):
-            Console().print(
-                f"Added column {','.join(keys)} to primary key✨ 🍰 ✨")
+        if (result is not True) and (result >= 1):
+            # if there is a primary key, delete the original primary key first
+            DROP_PRIMARIY_KEY = f'ALTER TABLE {table} DROP PRIMARY KEY;'
+            self.execute(command=DROP_PRIMARIY_KEY)
+
+        PRIMARY_KEY = ''
+        if isinstance(primary_key, str):
+            PRIMARY_KEY = f'`{primary_key}`'
+        elif isinstance(primary_key, (list, tuple)):
+            PRIMARY_KEY = f'`{"`,`".join(primary_key)}`'
+
+        ADD_PRIMARY_KEY = f"""ALTER TABLE {table} ADD PRIMARY KEY ({PRIMARY_KEY});"""
+        self.execute(command=ADD_PRIMARY_KEY)
+        Console().print("Well done ✨ 🍰 ✨")
 
     def alter_table_comment(self, table: str, comment: str):
         """Alter table's comment"""

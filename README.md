@@ -60,7 +60,21 @@ or
 data, nlines = mysql.select(command='''SELECT * FROM table LIMIT 10''')
 ```
 
+### Execute command
+```python
+COMMAND = '''
+  SELECT *
+  FROM GIRLS
+  WHERE AGE BETWEEN 20 AND 24
+      AND BOYFRIEND IS NULL
+  ORDER BY BEAUTY DESC;
+'''
+result = mysql.execute(COMMAND)
+'''
+```
+
 ### Create table
+
 ```python
 mysql = sqlstar.mysql(...)
 mysql.create_table(
