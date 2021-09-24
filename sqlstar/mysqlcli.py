@@ -40,7 +40,15 @@ class mysql(object):
         assert self.db, "db is required"
 
         # Connect to the database during initialization
-        self.connection, self.cursor = self.initialize()
+        self.__connection, self.__cursor = self.initialize()
+
+    @property
+    def connection(self):
+        return self.__connection
+
+    @property
+    def cursor(self):
+        return self.__cursor
 
     def initialize(self):
         """Initialize mysql"""
@@ -63,9 +71,9 @@ class mysql(object):
 
     def get_connect(self):
         """Get connection and cursor"""
-        if not self.connection.open:
-            self.connection, self.cursor = self.initialize()
-        return self.connection, self.cursor
+        if not self.__connection.open:
+            self.__connection, self.__cursor = self.initialize()
+        return self.__connection, self.__cursor
 
     def execute(self, command: str):
         """Execute sql command
@@ -405,8 +413,8 @@ Reason:
         if self.execute(command=ADD_COLUMN):
             Console().print(f"Added column {column} to {table}✨ 🍰 ✨")
 
-    def add_primary_key(self, table: str, primary_key: Union[str, list,
-                                                             tuple]):
+    def add_primary_key(self, table: str, primary_key: Union[str, list, tuple,
+                                                             set]):
         """Set primary key
 
         :param table:
@@ -426,7 +434,7 @@ Reason:
         PRIMARY_KEY = ''
         if isinstance(primary_key, str):
             PRIMARY_KEY = f'`{primary_key}`'
-        elif isinstance(primary_key, (list, tuple)):
+        elif isinstance(primary_key, (list, tuple, set)):
             PRIMARY_KEY = f'`{"`,`".join(primary_key)}`'
 
         ADD_PRIMARY_KEY = f"""ALTER TABLE {table} ADD PRIMARY KEY ({PRIMARY_KEY});"""
@@ -504,7 +512,7 @@ new_default_value new_comment;
                      table,
                      df: pd.DataFrame,
                      comments: dict = None,
-                     primary_key: Union[str, list, tuple] = None,
+                     primary_key: Union[str, list, tuple, set] = None,
                      dtypes: dict = None,
                      deduce_type=False):
         r'''Create table from dataframe
@@ -523,7 +531,8 @@ float、int、bool、datetime64[ns]、datetime64[ns, tz]、timedelta[ns]、categ
 
         try:
             if deduce_type:
-                # deduce and convert types, it's usually not accurately, but sometimes it will be useful
+                # deduce and convert types, it's usually not accurately,
+                # but sometimes it will be useful
                 df = df.convert_dtypes()
             cols = df.columns.tolist()
 
@@ -550,7 +559,7 @@ float、int、bool、datetime64[ns]、datetime64[ns, tz]、timedelta[ns]、categ
                 pass
             elif isinstance(primary_key, str):
                 PRIMARY_SEG = f' ,PRIMARY KEY (`id`, `{primary_key}`)'
-            elif isinstance(primary_key, (list, tuple)):
+            elif isinstance(primary_key, (list, tuple, set)):
                 PRIMARY_SEG = f' ,PRIMARY KEY (`id`, `{"`,`".join(primary_key)}`)'
             else:
                 pass
@@ -566,8 +575,8 @@ float、int、bool、datetime64[ns]、datetime64[ns, tz]、timedelta[ns]、categ
 
     def close(self):
         try:
-            self.connection.commit()
-            self.connection.close()
+            self.__connection.commit()
+            self.__connection.close()
             Console().print("Database connection closed, bye...😴",
                             style='white')
         except:

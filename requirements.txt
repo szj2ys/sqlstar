@@ -9,6 +9,5 @@ tabulate
 packaging
 toolz
 doger
-environs
 click
 click_help_colors
