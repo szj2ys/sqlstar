@@ -2,9 +2,8 @@ from os.path import join, isfile
 from os import walk
 import io
 import os
-import sys
-from shutil import rmtree
-from setuptools import find_packages, setup, Command
+
+from setuptools import find_packages, setup
 
 
 def read_file(filename):
@@ -20,7 +19,7 @@ def read_requirements(filename):
 
 
 NAME = 'sqlstar'
-DESCRIPTION = ("Awesome SQL client you are waiting for ✨")
+DESCRIPTION = ("✨ Awesome databases framework that shines ✨")
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -77,8 +76,8 @@ setup(
     description=DESCRIPTION,
     long_description=get_long_description(),
     long_description_content_type="text/markdown",
-    python_requires=">=3.6.0",
-    packages=find_packages(exclude=["examples", "settings"]),
+    python_requires=">=3.5.0",
+    packages=find_packages(exclude=["examples"]),
     package_data={NAME: ["*"]},
     data_files=[("", ["LICENSE"])],
     install_requires=read_requirements("requirements.txt"),
@@ -93,11 +92,9 @@ setup(
     },
     license="MIT",  # BSD
     classifiers=[
+        "Development Status :: 2 - Alpha",
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3",
     ],
     zip_safe=False,
 )

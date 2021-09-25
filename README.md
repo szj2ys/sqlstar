@@ -3,9 +3,8 @@
 </p>
 
 <h3 align="center">
-    <p>Awesome SQL client you are waiting for ✨</p>
+    <p>✨ Awesome databases framework that shines ✨</p>
 </h3>
-
 
 <p align="center">
     <a href="https://python.org/pypi/sqlstar">
@@ -30,7 +29,6 @@
         <img src="https://img.shields.io/github/stars/szj2ys/sqlstar?style=social" alt="Stars"/>
     </a>
 </p>
-
 
 # Installation
 ```shell
