@@ -36,7 +36,7 @@ pip install sqlstar
 ```
 you may want to checkout the version
 ```shell
-sqlstar version
+sqlstar -v
 ```
 Haha, `sqlstar` is now on your environment, having fun with it, enjoy ...
 
