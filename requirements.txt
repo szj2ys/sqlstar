@@ -3,11 +3,6 @@ rich
 pymysql
 tqdm
 pytimeparse
-simplejson
-slugify
-tabulate
-packaging
 toolz
-doger
 click
 click_help_colors

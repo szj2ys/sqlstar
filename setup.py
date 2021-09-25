@@ -84,13 +84,10 @@ setup(
     include_package_data=True,
     entry_points={
         "console_scripts": [
-            "sqlstar=sqlstar.cli:run",
-            "mysql2sqlite=sqlstar.mysql_to_sqlite3.cli:cli",
-            'sqlite_web = sqlstar.sqliting:main',
-            'sqlite2mysql=sqlstar.sqlite3_to_mysql.cli:cli'
+            "sqlstar=sqlstar.cmdline:run",
         ],
     },
-    license="MIT",  # BSD
+    license="MIT",
     classifiers=[
         "Development Status :: 2 - Alpha",
         "License :: OSI Approved :: MIT License",
