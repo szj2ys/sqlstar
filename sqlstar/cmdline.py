@@ -48,7 +48,7 @@ def cli():
 def run():
     try:
         cli()
-    except Exception as e:
+    except Exception as error:
         pass
 
 

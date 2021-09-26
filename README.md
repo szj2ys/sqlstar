@@ -30,51 +30,123 @@
     </a>
 </p>
 
-# Installation
+
+Breaking changes 🚨
+- **easy to use:** lots of out-of-the-box methods.
+- **less bug:** not like others, I don't want to name it, and if you 
+  unluckily enough to encounter, it's easy to solve by yourself.
+
+
+## Installation
 ```shell
 pip install sqlstar
 ```
-you may want to get information from sqlstar
+if you need help
 ```shell
 sqlstar -h
 ```
-Haha, `sqlstar` is now on your environment, having fun with it, enjoy ...
 
-# Usage
+## Tips and tricks ✅
+
+<details>
+  <summary>Guides 📝</summary>
+
 ## MySQL
-### Select 
+>for now, there is only mysql backend...
+## connection
 ```python
 import sqlstar
 
-
-mysql = sqlstar.mysql(
-    host="localhost", port=3306, user="root", passwd="root", db="adv_center"
-)
-
-df, cols = mysql.select_as_df(command='''SELECT * FROM table LIMIT 10''')
+# driver://user:passwd@host:port/dbname
+mysql = sqlstar.Database('mysql://root:***@localhost/tmp')
+mysql.connect()
 ```
-or
+## Query
 ```python
-data, nlines = mysql.select(command='''SELECT * FROM table LIMIT 10''')
-```
-
-### Execute command
-```python
-COMMAND = '''
-  SELECT *
-  FROM GIRLS
-  WHERE AGE BETWEEN 20 AND 24
-      AND BOYFRIEND IS NULL
-  ORDER BY BEAUTY DESC;
-'''
-result = mysql.execute(COMMAND)
+QUERY = '''
+    SELECT *
+    FROM Girls
+    WHERE AGE BETWEEN 20 AND 24
+        AND BOYFRIEND IS NULL
+    ORDER BY WHITE, RICH, BEAUTY DESC;
 '''
 ```
+### Fetch data, and format result into Dataframe
+```python
+df = mysql.fetch_df(QUERY)
+```
+Fetch all the rows
+```python
+data = mysql.fetch_all(QUERY)
+```
+Fetch several rows
+```python
+data = mysql.fetch_many(QUERY, 3)
+```
+
+## Execute
+```python
+mysql.execute("""
+    CREATE TABLE `users` (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `email` varchar(255) COLLATE utf8_bin NOT NULL,
+        `password` varchar(255) COLLATE utf8_bin NOT NULL,
+        PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+    AUTO_INCREMENT=1 ;
+    """)
+```
+
+## Insert
+### Insert many records
+```python
+mysql.insert_many(table, data, cols)
+```
+### Insert Dataframe type of data
+```python
+mysql.insert_df(table, df, cols)
+```
+
+## Export
+### Export result to csv
+```python
+mysql.export_csv(query, fname, sep)
+```
+### Export result to excel
+```python
+mysql.export_excel(query, fname)
+```
+
+</details>
+
+<details>
+  <summary>Nice Features ✨</summary>
 
 ### Create table
-
 ```python
-mysql = sqlstar.mysql(...)
+mysql.create_table(
+    "users",
+    comments={
+        "name": "姓名",
+        "height": "身高",
+        "weight": "体重"
+    },
+    dtypes={
+        "varchar(30)": [
+            "name",
+            "occupation",
+        ],
+        "float": ["height", "weight"],
+        "int": ["age"],
+    },
+)
+```
+if you have data, you can make it more simple, just like this
+```python
+mysql.create_table("users", df)
+```
+if you only want to specify some of them
+```python
 mysql.create_table(
     table='news_spider',
     df=df,
@@ -86,7 +158,7 @@ mysql.create_table(
         "publish_time": "发布时间",
         "read_num": "阅读量",
     },
-    # if type is not given, SQLStar will automatically inference
+    # if type is not given, sqlstar will automatically inference
     dtypes={
         "datetime": ["create_time", "publish_time"],
         "longtext": ["content"],
@@ -96,41 +168,51 @@ mysql.create_table(
 ```
 You don't need to fill in everything, and you just need to fill in 
 comment or data type that you want to specify, then 
-SQLStar will do the rest for you.
+`sqlstar` will do the rest for you.
 
-# SQLite
-
-<details>
-  <summary>Quick Start</summary>
-
+### Rename table
 ```python
-import sqlstar
+mysql.rename_table(table, name)
+```
 
-if __name__ == '__main__':
-    sqliting = sqlstar.sqlite("./test.db")
-    sqliting.execute("CREATE TABLE IF NOT EXISTS tester (timestamp DATETIME, uuid TEXT)")
-    sqliting.execute("INSERT into tester values (?, ?)", ("2010-01-01 13:00:00", "bow"))
-    sqliting.execute("INSERT into tester values (?, ?)", ("2011-02-02 14:14:14", "dog"))
+### Rename column
+```python
+mysql.rename_column(table, column, name, dtype)
+```
 
-    results, cols = sqliting.select_as_df("SELECT * from tester")
-    print(results)
-    print(cols)
+### Add new column
+```python
+mysql.add_column(table, column, dtype, comment, after)
+```
+### Add comment for table
+```python
+mysql.add_table_comment(table, comment)
+```
 
-    sqliting.close()
+### Change column's attribute
+```python
+mysql.change_column_attribute(table, column, dtype, notnull, comment)
+```
+
+### Set primary key
+```python
+mysql.add_primary_key(table, primary_key)
+```
+
+### Truncate table's data, but keep the table structure
+```python
+mysql.truncate_table(table)
+```
+
+### Drop table
+```python
+mysql.drop_table(table)
+```
+
+### Drop column
+```python
+mysql.drop_column(table, column)
 ```
 
 </details>
-
-
-
-## Acknowlegements
-- [mysql-to-sqlite3](https://github.com/techouse/mysql-to-sqlite3)
-- [sqlite_web](https://github.com/coleifer/sqlite-web)
-- [sqlite3-to-mysql](https://github.com/techouse/sqlite3-to-mysql)
-
-
-
-
-
-
 
