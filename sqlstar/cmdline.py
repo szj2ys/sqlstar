@@ -15,7 +15,6 @@ def print_version(ctx, param, value):
     package_conf = {}
     with open(join(ROOT, "__version__.py")) as f:
         exec(f.read(), package_conf)
-    # click.secho(package_conf['__version__'], fg='green')
     click.secho(package_conf['__version__'], blink=True, bold=True)
     ctx.exit()
 

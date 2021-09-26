@@ -1,5 +1,4 @@
 import getpass
-import logging
 import sys
 import typing
 import click
@@ -11,8 +10,6 @@ import pymysql
 from sqlstar.core import DatabaseURL
 from sqlstar.interfaces import ConnectionBackend, DatabaseBackend
 from sqlstar.utils import check_dtype
-
-logger = logging.getLogger("sqlstar")
 
 
 class MySQLBackend(DatabaseBackend):
@@ -42,22 +39,16 @@ class MySQLBackend(DatabaseBackend):
     def connect(self) -> None:
         assert self._connection is None, "DatabaseBackend is already running"
         kwargs = self._get_connection_kwargs()
-        try:
-            self._connection = pymysql.connect(
-                host=self._host,
-                port=self._port,
-                user=self._user,
-                password=self._password,
-                db=self._db,
-                autocommit=self._autocommit,
-                cursorclass=pymysql.cursors.DictCursor,
-                **kwargs,
-            )
-        except ConnectionError:
-            raise ConnectionError(
-                "\nPlease checkout your database settings 💥 💔 💥\nHOST:{}\nPORT:{}\nUSER:{}\nPASSWD:{}\nDB:{}"
-                .format(self._host, self._port, self._user, self._password,
-                        self._db))
+        self._connection = pymysql.connect(
+            host=self._host,
+            port=self._port,
+            user=self._user,
+            password=self._password,
+            db=self._db,
+            autocommit=self._autocommit,
+            cursorclass=pymysql.cursors.DictCursor,
+            **kwargs,
+        )
 
     def disconnect(self) -> None:
         assert self._connection is not None, "DatabaseBackend is not running"

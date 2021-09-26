@@ -1,5 +1,4 @@
 import importlib
-import typing
 
 
 class ImportFromStringError(Exception):
