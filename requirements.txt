@@ -1,7 +1,6 @@
 pandas
 rich
 pymysql
-pytimeparse
 toolz
 click
 click_help_colors
