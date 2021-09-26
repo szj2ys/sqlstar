@@ -170,9 +170,8 @@ class MySQLConnection(ConnectionBackend):
                                format_data)
 
         self.execute(INSERT_MANY_DATA)
-        Console().print(
-            f"[cyan]{str(table).capitalize()}[/cyan] inserts [green]{len(data)}[/green] records✨ 🍰 ✨"
-        )
+        Console().print(f"[bold cyan]{table}[/bold cyan] inserts [bold cyan]"
+                        f"{len(data)}[/bold cyan] records ✨ 🍰 ✨")
 
     def insert_df(self, table, df: pd.DataFrame):
         """Insert Dataframe type of data
@@ -186,7 +185,7 @@ class MySQLConnection(ConnectionBackend):
         :return:
         """
         if df.empty:
-            Console().print('There seems to be no data😅', style='red')
+            Console().print('There seems to be no data 😅', style='red')
         else:
             cols = df.columns.tolist()
             for col in cols:
