@@ -57,8 +57,7 @@ class ConnectionBackend:
                     cols: typing.Union[list, tuple]):
         raise NotImplementedError()
 
-    def insert_df(self, table, df: pd.DataFrame, cols: typing.Union[list,
-                                                                    tuple]):
+    def insert_df(self, table, df: pd.DataFrame):
         raise NotImplementedError()
 
     def rename_table(self, table: str, name: str):

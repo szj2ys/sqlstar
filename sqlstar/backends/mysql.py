@@ -158,11 +158,12 @@ class MySQLConnection(ConnectionBackend):
         :return:
         """
         # Convert list data into SQL insert syntax format: (.),(.)... ,(.)
-        format_data = ",".join(str(i) for i in data)
+        format_data = ", ".join(str(i) for i in data)
 
         INSERT_MANY_DATA = """
                     INSERT IGNORE INTO {}  ({})  VALUES {};
-                    """.format(table, ",".join(["`%s`" % col for col in cols]),
+                    """.format(table,
+                               ", ".join(["`%s`" % col for col in cols]),
                                format_data)
 
         self.execute(INSERT_MANY_DATA)
@@ -170,8 +171,7 @@ class MySQLConnection(ConnectionBackend):
             f"[cyan]{str(table).capitalize()}[/cyan] inserts [green]{len(data)}[/green] records✨ 🍰 ✨"
         )
 
-    def insert_df(self, table, df: pd.DataFrame, cols: typing.Union[list,
-                                                                    tuple]):
+    def insert_df(self, table, df: pd.DataFrame):
         """Insert Dataframe type of data
 
         # transform dtype
@@ -179,14 +179,18 @@ class MySQLConnection(ConnectionBackend):
 
         :param table:
         :param df: Dataframe
-        :param cols: columns
+
         :return:
         """
         if df.empty:
             Console().print('There seems to be no data😅', style='red')
         else:
+            cols = df.columns.tolist()
             try:
-                data = [tuple(row) for row in df[cols].values]
+                if len(cols) > 1:
+                    data = [tuple(row) for row in df[cols].values]
+                else:
+                    data = ['("' + row[0] + '")' for row in df[cols].values]
             except Exception as error:
                 raise Exception(
                     'Maybe you should process null values first...')

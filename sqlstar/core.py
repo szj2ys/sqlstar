@@ -179,8 +179,7 @@ class Database:
         """
         return self.connection().insert_many(table, data, cols)
 
-    def insert_df(self, table, df: pd.DataFrame, cols: typing.Union[list,
-                                                                    tuple]):
+    def insert_df(self, table, df: pd.DataFrame):
         """Insert Dataframe type of data
 
         # transform dtype
@@ -188,10 +187,10 @@ class Database:
 
         :param table:
         :param df: Dataframe
-        :param cols: columns
+
         :return:
         """
-        return self.connection().insert_df(table, df, cols)
+        return self.connection().insert_df(table, df)
 
     def rename_table(self, table: str, name: str):
         """Rename table
@@ -320,9 +319,8 @@ class Connection:
                     cols: typing.Union[list, tuple]):
         return self._connection.insert_many(table, data, cols)
 
-    def insert_df(self, table, df: pd.DataFrame, cols: typing.Union[list,
-                                                                    tuple]):
-        return self._connection.insert_df(table, df, cols)
+    def insert_df(self, table, df: pd.DataFrame):
+        return self._connection.insert_df(table, df)
 
     def rename_table(self, table: str, name: str):
         return self._connection.rename_table(table, name)

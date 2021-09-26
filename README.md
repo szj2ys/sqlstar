@@ -104,7 +104,7 @@ mysql.insert_many(table, data, cols)
 ```
 ### Insert Dataframe type of data
 ```python
-mysql.insert_df(table, df, cols)
+mysql.insert_df(table, df)
 ```
 
 ## Export
