@@ -186,6 +186,8 @@ class MySQLConnection(ConnectionBackend):
             Console().print('There seems to be no data😅', style='red')
         else:
             cols = df.columns.tolist()
+            for col in cols:
+                df.loc[:, col] = df.loc[:, col].astype(str)
             try:
                 if len(cols) > 1:
                     data = [tuple(row) for row in df[cols].values]
