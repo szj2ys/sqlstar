@@ -11,33 +11,25 @@
         <img src="https://badge.fury.io/py/sqlstar.svg" alt="Version"/>
     </a>
     <a href="https://python.org/pypi/sqlstar">
-        <img src="https://img.shields.io/pypi/l/sqlstar.svg?color=orange" alt="License"/>
+        <img src="https://img.shields.io/pypi/l/sqlstar.svg?color=blue" 
+alt="License"/>
     </a>
     <a href="https://python.org/pypi/sqlstar">
         <img src="https://static.pepy.tech/badge/sqlstar?color=blue" alt="pypi total downloads"/>
     </a>
     <a href="https://python.org/pypi/sqlstar">
-        <img src="https://img.shields.io/pypi/dm/sqlstar?color=blue" alt="pypi downloads"/>
-    </a>
-    <a href="https://python.org/pypi/sqlstar">
         <img src="https://img.shields.io/github/last-commit/szj2ys/sqlstar?color=blue" alt="GitHub last commit"/>
-    </a>
-    <a href="https://github.com/szj2ys/sqlstar">
-        <img src="https://visitor-badge.glitch.me/badge?page_id=szj2ys.sqlstar" alt="Visitors"/>
-    </a>
-    <a href="https://github.com/szj2ys/sqlstar">
-        <img src="https://img.shields.io/github/stars/szj2ys/sqlstar?style=social" alt="Stars"/>
     </a>
 </p>
 
 
-Breaking changes 🚨
+Breaking changes ⚙ 🔑 🎉 🎠 ❌
 - **easy to use:** lots of out-of-the-box methods.
 - **less bug:** not like others, I don't want to name it, and if you 
   unluckily enough to encounter, it's easy to solve by yourself.
 
 
-## Installation
+## Installation ⚙🙈
 ```shell
 pip install sqlstar
 ```
@@ -51,8 +43,8 @@ sqlstar -h
 <details>
   <summary>Guides 📝</summary>
 
-## MySQL
 >for now, there is only mysql backend...
+
 ## connection
 ```python
 import sqlstar
