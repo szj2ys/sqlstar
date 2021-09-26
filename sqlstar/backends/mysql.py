@@ -4,12 +4,15 @@ import typing
 import click
 import pandas as pd
 from rich.console import Console
-
+import warnings
 import pymysql
 
 from sqlstar.core import DatabaseURL
 from sqlstar.interfaces import ConnectionBackend, DatabaseBackend
 from sqlstar.utils import check_dtype
+
+warnings.filterwarnings('ignore')
+warnings.simplefilter('ignore')
 
 
 class MySQLBackend(DatabaseBackend):
