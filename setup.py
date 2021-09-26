@@ -1,5 +1,3 @@
-from os.path import join, isfile
-from os import walk
 import io
 import os
 
@@ -34,20 +32,7 @@ def get_about(author, url, email):
 
     with open(os.path.join(here, NAME, "__version__.py")) as f:
         exec(f.read(), about)
-
     return about
-
-
-def package_files(directories):
-    paths = []
-    for item in directories:
-        if isfile(item):
-            paths.append(join("..", item))
-            continue
-        for (path, directories, filenames) in walk(item):
-            for filename in filenames:
-                paths.append(join("..", path, filename))
-    return paths
 
 
 def get_long_description():
