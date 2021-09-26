@@ -73,6 +73,7 @@ setup(
         ],
     },
     license="MIT",
+    # https://pypi.org/classifiers/
     classifiers=[
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: MIT License",
