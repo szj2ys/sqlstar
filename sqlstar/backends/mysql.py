@@ -256,7 +256,8 @@ class MySQLConnection(ConnectionBackend):
         if dtypes:
             for dtype, type_cols in dtypes.items():
                 types = merge(types, {col: dtype for col in type_cols})
-        cols = df.columns.tolist() if df else types.keys()
+
+        cols = df.columns.tolist() if df is not None else types.keys()
 
         # if there is no id, add an auto_increment id
         if ('id' not in cols) or ('id' not in primary_key):
