@@ -1,5 +1,5 @@
 <p align="center">
-    <img width="200" src="https://cdn.jsdelivr.net/gh/szj2ys/sqlstar/sqlstar/logo.png"/>
+    <img width="200" src="https://cdn.jsdelivr.net/gh/szj2ys/sqlstar/sqlstar/logo1.png"/>
 </p>
 
 <h3 align="center">
