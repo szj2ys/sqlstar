@@ -161,7 +161,7 @@ class MySQLConnection(ConnectionBackend):
         :return:
         """
         # Convert list data into SQL insert syntax format: (.),(.)... ,(.)
-        format_data = ", ".join(str(i) for i in data)
+        format_data = ", ".join(str(tuple(row)) for row in data)
 
         INSERT_MANY_DATA = """
                     INSERT IGNORE INTO {}  ({})  VALUES {};
