@@ -1,6 +1,7 @@
 pandas
 rich
 pymysql
+sqlalchemy
 toolz
 click
 click_help_colors

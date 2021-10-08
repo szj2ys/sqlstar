@@ -392,7 +392,8 @@ class DatabaseURL:
     @property
     def components(self) -> SplitResult:
         if not hasattr(self, "_components"):
-            self._components = urlsplit(self._url)
+            # don't need parse '#', replace by 'æ' first, then we replace back
+            self._components = urlsplit(self._url.replace('#', 'æ'))
         return self._components
 
     @property
@@ -428,7 +429,7 @@ class DatabaseURL:
     def password(self) -> typing.Optional[str]:
         if self.components.password is None:
             return None
-        return unquote(self.components.password)
+        return unquote(self.components.password.replace('æ', '#'))
 
     @property
     def hostname(self) -> typing.Optional[str]:
