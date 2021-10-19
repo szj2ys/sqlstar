@@ -221,8 +221,8 @@ class PostgreConnection(ConnectionBackend):
 
     def drop_table(self, table):
         """Drop table"""
-        DROP_TABLE = f"""DROP TABLE IF EXISTS `{table}`;"""
-        data = self.fetch_all(f'''SELECT * FROM {table} LIMIT 10''')
+        DROP_TABLE = f"""DROP TABLE IF EXISTS {table};"""
+        data = self.fetch_all(f'''SELECT * FROM {table} LIMIT 10;''')
 
         # if the table is not empty, warning user
         if data:
@@ -243,7 +243,7 @@ class PostgreConnection(ConnectionBackend):
                      dtypes: dict = None):
         """Create table"""
         from toolz import merge
-        PREFIX = f'''CREATE TABLE IF NOT EXISTS `{table}` ('''
+        PREFIX = f'''CREATE TABLE IF NOT EXISTS {table} ('''
         SUFFIX = ''') DEFAULT CHARSET=utf8mb4;'''
 
         types = {}
@@ -255,7 +255,7 @@ class PostgreConnection(ConnectionBackend):
 
         # if there is no id, add an auto_increment id
         if ('id' not in cols) or ('id' not in primary_key):
-            PREFIX += '''`id` INT AUTO_INCREMENT COMMENT 'id','''
+            PREFIX += '''id INT AUTO_INCREMENT COMMENT 'id','''
 
         COLUMNS = []
 
@@ -264,17 +264,16 @@ class PostgreConnection(ConnectionBackend):
             dtype = types.get(col, None)
 
             if dtype:
-                COLUMNS.append(f'''`{col}` {dtype} COMMENT "{comment}"''')
+                COLUMNS.append(f'''{col} {dtype} COMMENT "{comment}"''')
             else:
                 infer_dtype = check_dtype(df[col].dtypes)
-                COLUMNS.append(
-                    f'''`{col}` {infer_dtype} COMMENT "{comment}"''')
+                COLUMNS.append(f'''{col} {infer_dtype} COMMENT "{comment}"''')
 
-        PRIMARY_SEG = f' ,PRIMARY KEY (`id`)'
+        PRIMARY_SEG = f' ,PRIMARY KEY (id)'
         if isinstance(primary_key, str) and (not primary_key == 'id'):
-            PRIMARY_SEG = f' ,PRIMARY KEY (`id`, `{primary_key}`)'
+            PRIMARY_SEG = f' ,PRIMARY KEY (id, {primary_key})'
         elif isinstance(primary_key, (list, tuple, set)):
-            PRIMARY_SEG = f' ,PRIMARY KEY (`id`, `{"`,`".join(primary_key)}`)'
+            PRIMARY_SEG = f' ,PRIMARY KEY (id, {",".join(primary_key)})'
         else:
             pass
 
@@ -301,7 +300,7 @@ class PostgreConnection(ConnectionBackend):
         """Rename column
 
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        ALTER  TABLE `table` CHANGE [column] [new column] [new type];
+        ALTER  TABLE table RENAME [column] TO [new column];
 
         :param table:
         :param column:
@@ -309,8 +308,8 @@ class PostgreConnection(ConnectionBackend):
         :param dtype:
         :return:
         """
-        RENAME_COLUMN = """ALTER  TABLE {} CHANGE COLUMN {} {} {};""".format(
-            table, column, name, dtype)
+        RENAME_COLUMN = """ALTER  TABLE {} RENAME {} TO {};""".format(
+            table, column, name)
         self.execute(RENAME_COLUMN)
         Console().print("Renamed column {} to {} ✨ 🍰 ✨".format(column, name))
 
@@ -323,6 +322,7 @@ class PostgreConnection(ConnectionBackend):
         after: str = None,
     ):
         """Add new column
+    comment on column test2.id is '...';
 
         :param table:
         :param column:
@@ -352,7 +352,7 @@ class PostgreConnection(ConnectionBackend):
 
     def add_table_comment(self, table: str, comment: str):
         """Add comment for table"""
-        ADD_TABLE_COMMENT = """ALTER TABLE {} COMMENT '{}' ;""".format(
+        ADD_TABLE_COMMENT = """COMMENT ON TABLE {} IS '{}' ;""".format(
             table, comment)
         self.execute(ADD_TABLE_COMMENT)
         Console().print("Table comment added ✨ 🍰 ✨")
@@ -403,9 +403,9 @@ class PostgreConnection(ConnectionBackend):
 
         PRIMARY_KEY = ''
         if isinstance(primary_key, str):
-            PRIMARY_KEY = f'`{primary_key}`'
+            PRIMARY_KEY = f'{primary_key}'
         elif isinstance(primary_key, (list, tuple)):
-            PRIMARY_KEY = f'`{"`,`".join(primary_key)}`'
+            PRIMARY_KEY = f'{",".join(primary_key)}'
 
         ADD_PRIMARY_KEY = f"""ALTER TABLE {table} ADD PRIMARY KEY ({PRIMARY_KEY});"""
         self.execute(ADD_PRIMARY_KEY)

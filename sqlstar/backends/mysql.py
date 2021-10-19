@@ -226,7 +226,7 @@ class MySQLConnection(ConnectionBackend):
     def drop_table(self, table):
         """Drop table"""
         DROP_TABLE = f"""DROP TABLE IF EXISTS `{table}`;"""
-        data = self.fetch_all(f'''SELECT * FROM {table} LIMIT 10''')
+        data = self.fetch_all(f'''SELECT * FROM {table} LIMIT 10;''')
 
         # if the table is not empty, warning user
         if data:
