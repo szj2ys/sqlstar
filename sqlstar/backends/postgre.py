@@ -6,7 +6,8 @@ import click
 import pandas as pd
 from rich.console import Console
 import warnings
-import pymysql
+import psycopg
+# https://www.psycopg.org/psycopg3
 
 from sqlstar.core import DatabaseURL
 from sqlstar.interfaces import ConnectionBackend, DatabaseBackend
@@ -16,12 +17,12 @@ warnings.filterwarnings('ignore')
 warnings.simplefilter('ignore')
 
 
-class MySQLBackend(DatabaseBackend):
+class PostgreBackend(DatabaseBackend):
     def __init__(self, database_url: typing.Union[DatabaseURL, str],
                  **options: typing.Any) -> None:
         self._database_url = DatabaseURL(database_url)
         self._host = self._database_url.hostname
-        self._port = self._database_url.port or 3306
+        self._port = self._database_url.port or 5432
         self._user = self._database_url.username or getpass.getuser()
         self._password = self._database_url.password
         self._db = self._database_url.database
@@ -43,33 +44,29 @@ class MySQLBackend(DatabaseBackend):
     def connect(self) -> None:
         assert self._connection is None, "DatabaseBackend is already running"
         kwargs = self._get_connection_kwargs()
-        self._connection = pymysql.connect(
-            host=self._host,
-            port=self._port,
-            user=self._user,
-            password=self._password,
-            db=self._db,
-            autocommit=self._autocommit,
-            cursorclass=pymysql.cursors.DictCursor,
-            **kwargs,
-        )
+        self._connection = psycopg.connect(dbname=self._db,
+                                           user=self._user,
+                                           password=self._password,
+                                           host=self._host,
+                                           port=self._port,
+                                           autocommit=self._autocommit)
 
     def disconnect(self) -> None:
         assert self._connection is not None, "DatabaseBackend is not running"
         self._connection.cursor().close()
         self._connection = None
 
-    def connection(self) -> "MySQLConnection":
-        return MySQLConnection(self, self._connection)
+    def connection(self) -> "PostgreConnection":
+        return PostgreConnection(self, self._connection)
 
 
-class MySQLConnection(ConnectionBackend):
-    def __init__(self, database: MySQLBackend, connection: pymysql.Connection):
+class PostgreConnection(ConnectionBackend):
+    def __init__(self, database: PostgreBackend, connection: psycopg.connect):
         self._database = database
         self._connection = connection
 
     @property
-    def connection(self) -> pymysql.Connection:
+    def connection(self) -> psycopg.connect:
         assert self._connection is not None, "Connection is not acquired"
         return self._connection
 
@@ -163,9 +160,9 @@ class MySQLConnection(ConnectionBackend):
         """
         assert self._connection is not None, "Connection is not acquired"
         cursor = self._connection.cursor()
-        INSERT_MANY = "INSERT IGNORE INTO {table}  ({cols})  VALUES ({values});".format(
+        INSERT_MANY = "INSERT INTO {table} ({cols}) VALUES ({values})".format(
             table=table,
-            cols=", ".join(["`%s`" % col for col in cols]),
+            cols=", ".join(cols),
             values=", ".join(["%s" for col in cols]))
 
         cursor.executemany(INSERT_MANY, data)
@@ -189,7 +186,6 @@ class MySQLConnection(ConnectionBackend):
             Console().print('There seems to be no data 😅', style='red')
         else:
             cols = df.columns.tolist()
-
             if dropna:
                 df.dropna(axis=kwargs.get('axis', 0),
                           how=kwargs.get('how', 'any'),

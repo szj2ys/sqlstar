@@ -1,6 +1,7 @@
 pandas
 rich
 pymysql
+psycopg
 toolz
 click
 click_help_colors

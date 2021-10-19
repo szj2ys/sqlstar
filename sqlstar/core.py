@@ -1,3 +1,4 @@
+# *_*coding:utf-8 *_*
 import logging
 import sys
 import typing
@@ -38,6 +39,7 @@ logger = logging.getLogger("sqlstar")
 class Database:
     SUPPORTED_BACKENDS = {
         "mysql": "sqlstar.backends.mysql:MySQLBackend",
+        "postgre": "sqlstar.backends.postgre:PostgreBackend",
     }
 
     def __init__(
@@ -179,7 +181,7 @@ class Database:
         """
         return self.connection().insert_many(table, data, cols)
 
-    def insert_df(self, table, df: pd.DataFrame):
+    def insert_df(self, table, df: pd.DataFrame, dropna=True, **kwargs):
         """Insert Dataframe type of data
 
         # transform dtype
@@ -190,7 +192,7 @@ class Database:
 
         :return:
         """
-        return self.connection().insert_df(table, df)
+        return self.connection().insert_df(table, df, dropna, **kwargs)
 
     def rename_table(self, table: str, name: str):
         """Rename table
@@ -319,8 +321,8 @@ class Connection:
                     cols: typing.Union[list, tuple]):
         return self._connection.insert_many(table, data, cols)
 
-    def insert_df(self, table, df: pd.DataFrame):
-        return self._connection.insert_df(table, df)
+    def insert_df(self, table, df: pd.DataFrame, dropna=True, **kwargs):
+        return self._connection.insert_df(table, df, dropna, **kwargs)
 
     def rename_table(self, table: str, name: str):
         return self._connection.rename_table(table, name)
@@ -392,8 +394,8 @@ class DatabaseURL:
     @property
     def components(self) -> SplitResult:
         if not hasattr(self, "_components"):
-            # don't need parse '#', replace by 'æ' first, then we replace back
-            self._components = urlsplit(self._url.replace('#', 'æ'))
+            # don't need parse '#', replace by 'æ◊' first, then we replace back
+            self._components = urlsplit(self._url.replace('#', 'æ◊'))
         return self._components
 
     @property
@@ -429,7 +431,7 @@ class DatabaseURL:
     def password(self) -> typing.Optional[str]:
         if self.components.password is None:
             return None
-        return unquote(self.components.password.replace('æ', '#'))
+        return unquote(self.components.password.replace('æ◊', '#'))
 
     @property
     def hostname(self) -> typing.Optional[str]:

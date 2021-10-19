@@ -1,3 +1,4 @@
+# *_*coding:utf-8 *_*
 import typing
 import pandas as pd
 
@@ -57,7 +58,7 @@ class ConnectionBackend:
                     cols: typing.Union[list, tuple]):
         raise NotImplementedError()
 
-    def insert_df(self, table, df: pd.DataFrame):
+    def insert_df(self, table, df: pd.DataFrame, dropna=True, **kwargs):
         raise NotImplementedError()
 
     def rename_table(self, table: str, name: str):
