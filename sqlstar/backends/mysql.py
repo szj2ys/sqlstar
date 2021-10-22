@@ -10,7 +10,7 @@ import pymysql
 
 from sqlstar.core import DatabaseURL
 from sqlstar.interfaces import ConnectionBackend, DatabaseBackend
-from sqlstar.utils import check_dtype
+from sqlstar.utils import check_dtype_mysql
 
 warnings.filterwarnings('ignore')
 warnings.simplefilter('ignore')
@@ -270,7 +270,7 @@ class MySQLConnection(ConnectionBackend):
             if dtype:
                 COLUMNS.append(f'''`{col}` {dtype} COMMENT "{comment}"''')
             else:
-                infer_dtype = check_dtype(df[col].dtypes)
+                infer_dtype = check_dtype_mysql(df[col].dtypes)
                 COLUMNS.append(
                     f'''`{col}` {infer_dtype} COMMENT "{comment}"''')
 
