@@ -49,7 +49,8 @@ class PostgreBackend(DatabaseBackend):
                                            password=self._password,
                                            host=self._host,
                                            port=self._port,
-                                           autocommit=self._autocommit)
+                                           autocommit=self._autocommit,
+                                           **kwargs)
 
     def disconnect(self) -> None:
         assert self._connection is not None, "DatabaseBackend is not running"
@@ -57,6 +58,7 @@ class PostgreBackend(DatabaseBackend):
         self._connection = None
 
     def connection(self) -> "PostgreConnection":
+        assert self._connection is not None, "Connection is not acquired"
         return PostgreConnection(self, self._connection)
 
 
