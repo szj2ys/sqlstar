@@ -239,6 +239,27 @@ class MySQLConnection(ConnectionBackend):
         Console().print(
             f"Table [bold cyan]{table}[/bold cyan] was dropped ✨ 🍰 ✨")
 
+    def update(self, table, where: dict, target: dict):
+        """Update table's data
+
+        :param table:
+        :param where:
+        :param target:
+        :return:
+        """
+        locs = []
+        targets = []
+        for key, value in where.items():
+            locs.append(f'{key}={value}')
+        for key, value in target.items():
+            targets.append(f'{key}={value}')
+        SQL = f"""UPDATE {table} 
+        SET {' ,'.join(targets)} 
+        WHERE {' and '.join(locs)};
+            """
+        self.execute(SQL)
+        Console().print(f"Update [bold cyan]data[/bold cyan] succsess ✨ 🍰 ✨")
+
     def create_table(self,
                      table,
                      df: pd.DataFrame = None,

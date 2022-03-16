@@ -137,6 +137,10 @@ class Database:
         """Drop table"""
         return self.connection().drop_table(table)
 
+    def update(self, table, where: dict, target: dict):
+        """Update table's data"""
+        return self.connection().update(table, where, target)
+
     def drop_column(self, table, column: typing.Union[str, list, tuple]):
         """Drop column"""
         return self.connection().drop_column(table, column)
@@ -357,6 +361,10 @@ class Connection:
 
     def drop_table(self, table: typing.Union[str]):
         return self._connection.drop_table(table)
+
+    def update(self, table, where: dict, target: dict):
+        """Update table's data"""
+        return self._connection.update(table, where, target)
 
     def drop_column(self, table, column: typing.Union[str, list, tuple]):
         return self._connection.drop_column(table, column)

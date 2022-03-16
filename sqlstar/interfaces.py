@@ -30,6 +30,9 @@ class ConnectionBackend:
     def truncate_table(self, table: typing.Union[str]):
         raise NotImplementedError()
 
+    def update(self, table, where: dict, target: dict):
+        raise NotImplementedError()
+
     def fetch_df(self, table: typing.Union[str]):
         raise NotImplementedError()
 
