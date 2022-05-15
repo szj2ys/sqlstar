@@ -185,7 +185,7 @@ class Database:
         """
         return self.connection().insert_many(table, data, cols)
 
-    def insert_df(self, table, df: pd.DataFrame, dropna=True, **kwargs):
+    def insert_df(self, table, df: pd.DataFrame, dropna=False, **kwargs):
         """Insert Dataframe type of data
 
         # transform dtype
