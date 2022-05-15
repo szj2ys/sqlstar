@@ -325,7 +325,7 @@ class Connection:
                     cols: typing.Union[list, tuple]):
         return self._connection.insert_many(table, data, cols)
 
-    def insert_df(self, table, df: pd.DataFrame, dropna=True, **kwargs):
+    def insert_df(self, table, df: pd.DataFrame, dropna=False, **kwargs):
         return self._connection.insert_df(table, df, dropna, **kwargs)
 
     def rename_table(self, table: str, name: str):
