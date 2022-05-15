@@ -50,7 +50,7 @@ class MySQLBackend(DatabaseBackend):
             password=self._password,
             db=self._db,
             autocommit=self._autocommit,
-            cursorclass=pymysql.cursors.DictCursor,
+            # cursorclass=pymysql.cursors.DictCursor,
             **kwargs,
         )
 
@@ -173,7 +173,7 @@ class MySQLConnection(ConnectionBackend):
                         f"{len(data)}[/bold cyan] records ✨ 🍰 ✨")
         cursor.close()
 
-    def insert_df(self, table, df: pd.DataFrame, dropna=True, **kwargs):
+    def insert_df(self, table, df: pd.DataFrame, dropna=False, **kwargs):
         """Insert Dataframe type of data
 
         # transform dtype
@@ -196,6 +196,8 @@ class MySQLConnection(ConnectionBackend):
                           thresh=kwargs.get('thresh'),
                           subset=kwargs.get('subset'),
                           inplace=True)
+            else:
+                df = df.fillna(value='None')
             data = [tuple(row) for row in df[cols].values]
             self.insert_many(table, data, cols)
 
