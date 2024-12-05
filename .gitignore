@@ -7,7 +7,7 @@ __pycache__/
 *.sqlite3
 *.log
 demo*
-examples
+examples/*
 *demo.py
 *test.py
 test*

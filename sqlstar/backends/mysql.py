@@ -17,6 +17,7 @@ warnings.simplefilter('ignore')
 
 
 class MySQLBackend(DatabaseBackend):
+
     def __init__(self, database_url: typing.Union[DatabaseURL, str],
                  **options: typing.Any) -> None:
         self._database_url = DatabaseURL(database_url)
@@ -64,6 +65,7 @@ class MySQLBackend(DatabaseBackend):
 
 
 class MySQLConnection(ConnectionBackend):
+
     def __init__(self, database: MySQLBackend, connection: pymysql.Connection):
         self._database = database
         self._connection = connection
@@ -287,13 +289,15 @@ class MySQLConnection(ConnectionBackend):
         COLUMNS = []
 
         for col in cols:
-            comment = comments.get(col, "...") if comments else "..."
+            comment = comments.get(col, "") if comments else ""
             dtype = types.get(col, None)
 
             if dtype:
                 COLUMNS.append(f'''`{col}` {dtype} COMMENT "{comment}"''')
             else:
-                infer_dtype = check_dtype_mysql(df[col].dtypes)
+                max_col_len = df[col].dropna().astype(str).str.len().max()
+                infer_dtype = check_dtype_mysql(pdtype=df[col].dtypes,
+                                                max_content_len=max_col_len)
                 COLUMNS.append(
                     f'''`{col}` {infer_dtype} COMMENT "{comment}"''')
 
@@ -302,8 +306,6 @@ class MySQLConnection(ConnectionBackend):
             PRIMARY_SEG = f' ,PRIMARY KEY (`id`, `{primary_key}`)'
         elif isinstance(primary_key, (list, tuple, set)):
             PRIMARY_SEG = f' ,PRIMARY KEY (`id`, `{"`,`".join(primary_key)}`)'
-        else:
-            pass
 
         CREATE_TABLE = PREFIX + ','.join(COLUMNS) + PRIMARY_SEG + SUFFIX
 

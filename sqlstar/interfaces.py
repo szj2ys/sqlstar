@@ -4,6 +4,7 @@ import pandas as pd
 
 
 class DatabaseBackend:
+
     def connect(self) -> None:
         raise NotImplementedError()
 
@@ -15,6 +16,7 @@ class DatabaseBackend:
 
 
 class ConnectionBackend:
+
     def fetch_all(self, query: typing.Union[str]):
         raise NotImplementedError()
 

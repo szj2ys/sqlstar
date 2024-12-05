@@ -292,6 +292,7 @@ class Database:
 
 
 class Connection:
+
     def __init__(self, backend: DatabaseBackend):
         self._backend = backend
         self._connection = self._backend.connection()
@@ -384,11 +385,13 @@ class Connection:
 
 
 class _EmptyNetloc(str):
+
     def __bool__(self) -> bool:
         return True
 
 
 class DatabaseURL:
+
     def __init__(self, url: typing.Union[str, "DatabaseURL"]):
         if isinstance(url, DatabaseURL):
             self._url: str = url._url

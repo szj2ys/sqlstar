@@ -18,6 +18,7 @@ warnings.simplefilter('ignore')
 
 
 class PostgreBackend(DatabaseBackend):
+
     def __init__(self, database_url: typing.Union[DatabaseURL, str],
                  **options: typing.Any) -> None:
         self._database_url = DatabaseURL(database_url)
@@ -63,6 +64,7 @@ class PostgreBackend(DatabaseBackend):
 
 
 class PostgreConnection(ConnectionBackend):
+
     def __init__(self, database: PostgreBackend, connection: psycopg.connect):
         self._database = database
         self._connection = connection
