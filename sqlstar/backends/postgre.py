@@ -4,7 +4,7 @@ import sys
 import typing
 import click
 import pandas as pd
-from rich.console import Console
+from loguru import logger
 import warnings
 import psycopg
 # https://www.psycopg.org/psycopg3
@@ -170,8 +170,8 @@ class PostgreConnection(ConnectionBackend):
             values=", ".join(["%s" for col in cols]))
 
         cursor.executemany(INSERT_MANY, data)
-        Console().print(f"[bold cyan]{table}[/bold cyan] inserts [bold cyan]"
-                        f"{len(data)}[/bold cyan] records ✨ 🍰 ✨")
+        logger.info(f"{table} inserts "
+                        f"{len(data)} records ✨ 🍰 ✨")
         cursor.close()
 
     def insert_df(self, table, df: pd.DataFrame, dropna=True, **kwargs):
@@ -187,7 +187,7 @@ class PostgreConnection(ConnectionBackend):
         :return:
         """
         if df.empty:
-            Console().print('There seems to be no data 😅', style='red')
+            logger.warning('There seems no data 😅')
         else:
             cols = df.columns.tolist()
             if dropna:
@@ -208,8 +208,8 @@ class PostgreConnection(ConnectionBackend):
         TRUNCATE_TABLE = """TRUNCATE TABLE {};""".format(table)
 
         self.execute(TRUNCATE_TABLE)
-        Console().print(
-            f"Table [bold cyan]{table}[/bold cyan] was truncated ✨ 🍰 ✨")
+        logger.info(
+            f"Table {table} was truncated ✨ 🍰 ✨")
 
     def drop_column(self, table, column: typing.Union[str, list, tuple]):
         """Drop column"""
@@ -221,7 +221,7 @@ class PostgreConnection(ConnectionBackend):
                 table, ',DROP COLUMN '.join([col for col in column]))
 
         self.execute(DROP_COLUMN)
-        Console().print("Column was dropped ✨ 🍰 ✨")
+        logger.info("Column was dropped ✨ 🍰 ✨")
 
     def drop_table(self, table):
         """Drop table"""
@@ -236,8 +236,8 @@ class PostgreConnection(ConnectionBackend):
                 self.execute(DROP_TABLE)
         else:
             self.execute(DROP_TABLE)
-        Console().print(
-            f"Table [bold cyan]{table}[/bold cyan] was dropped ✨ 🍰 ✨")
+        logger.info(
+            f"Table {table} was dropped ✨ 🍰 ✨")
 
     def create_table(self,
                      table,
@@ -284,8 +284,8 @@ class PostgreConnection(ConnectionBackend):
         CREATE_TABLE = PREFIX + ','.join(COLUMNS) + PRIMARY_SEG + SUFFIX
 
         self.execute(CREATE_TABLE)
-        Console().print(
-            f"Table [blod cyan]{table}[/blod cyan] was created ✨ 🍰 ✨")
+        logger.info(
+            f"Table {table} was created ✨ 🍰 ✨")
 
     def rename_table(self, table: str, name: str):
         """Rename table
@@ -296,9 +296,8 @@ class PostgreConnection(ConnectionBackend):
         """
         RENAME_TABLE = """ALTER TABLE {} RENAME TO {} ;""".format(table, name)
         self.execute(RENAME_TABLE)
-        Console().print(
-            "Renamed table [bold red]{}[/bold red] to [bold cyan]{}[/bold "
-            "cyan] ✨ 🍰 ✨".format(table, name))
+        logger.info(
+            "Renamed table {} to {} ✨ 🍰 ✨".format(table, name))
 
     def rename_column(self, table: str, column: str, name: str, dtype: str):
         """Rename column
@@ -315,7 +314,7 @@ class PostgreConnection(ConnectionBackend):
         RENAME_COLUMN = """ALTER  TABLE {} RENAME {} TO {};""".format(
             table, column, name)
         self.execute(RENAME_COLUMN)
-        Console().print("Renamed column {} to {} ✨ 🍰 ✨".format(column, name))
+        logger.info("Renamed column {} to {} ✨ 🍰 ✨".format(column, name))
 
     def add_column(
         self,
@@ -338,9 +337,9 @@ class PostgreConnection(ConnectionBackend):
         """
         MYSQL_KEYWORDS = ["CHANGE", "SCHEMA", "DEFAULT"]
         if column.upper() in MYSQL_KEYWORDS:
-            Console().print("%(column)s was SQL keyword or reserved word 😯\n" %
-                            {"column": column},
-                            style='red')
+            logger.error("%(column)s was SQL keyword or reserved word 😯\n" %
+                            {"column": column}
+                            )
             sys.exit(1)
 
         if after:
@@ -352,14 +351,14 @@ class PostgreConnection(ConnectionBackend):
                 table, column, dtype, comment)
 
         self.execute(ADD_COLUMN)
-        Console().print(f"Added column {column} to {table} ✨ 🍰 ✨")
+        logger.info(f"Added column {column} to {table} ✨ 🍰 ✨")
 
     def add_table_comment(self, table: str, comment: str):
         """Add comment for table"""
         ADD_TABLE_COMMENT = """COMMENT ON TABLE {} IS '{}' ;""".format(
             table, comment)
         self.execute(ADD_TABLE_COMMENT)
-        Console().print("Table comment added ✨ 🍰 ✨")
+        logger.info("Table comment added ✨ 🍰 ✨")
 
     def change_column_attribute(
         self,
@@ -383,8 +382,8 @@ class PostgreConnection(ConnectionBackend):
             table, column, dtype, "NOT NULL" if notnull else "DEFAULT NULL",
             comment)
         self.execute(CHANG_COLUMN_ATTRIBUTE)
-        Console().print(
-            "Column [bold cyan]{}[/bold cyan]'s attribute was modified "
+        logger.info(
+            "Column {}'s attribute was modified "
             "✨ 🍰 ✨".format(column))
 
     def add_primary_key(self, table: str, primary_key: typing.Union[str, list,
@@ -413,4 +412,4 @@ class PostgreConnection(ConnectionBackend):
 
         ADD_PRIMARY_KEY = f"""ALTER TABLE {table} ADD PRIMARY KEY ({PRIMARY_KEY});"""
         self.execute(ADD_PRIMARY_KEY)
-        Console().print("Well done ✨ 🍰 ✨")
+        logger.info("Well done ✨ 🍰 ✨")

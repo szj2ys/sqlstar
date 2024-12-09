@@ -1,12 +1,14 @@
 # *_*coding:utf-8 *_*
 import getpass
 import sys
+import traceback
 import typing
 import click
 import pandas as pd
-from rich.console import Console
+
 import warnings
 import pymysql
+from loguru import logger
 
 from sqlstar.core import DatabaseURL
 from sqlstar.interfaces import ConnectionBackend, DatabaseBackend
@@ -179,8 +181,8 @@ class MySQLConnection(ConnectionBackend):
             """
 
         cursor.executemany(INSERT_MANY, data)
-        Console().print(f"[bold cyan]{table}[/bold cyan] inserts [bold cyan]"
-                        f"{len(data)}[/bold cyan] records ✨ 🍰 ✨")
+        logger.info(f"{table} inserts "
+                        f"{len(data)} records ✨ 🍰 ✨")
         cursor.close()
 
     def insert_df(self, table, df: pd.DataFrame, dropna=False, **kwargs):
@@ -196,7 +198,7 @@ class MySQLConnection(ConnectionBackend):
         :return:
         """
         if df.empty:
-            Console().print('There seems to be no data 😅', style='red')
+            logger.warning('There seems no data 😅')
         else:
             cols = df.columns.tolist()
 
@@ -220,8 +222,8 @@ class MySQLConnection(ConnectionBackend):
         TRUNCATE_TABLE = """TRUNCATE TABLE {};""".format(table)
 
         self.execute(TRUNCATE_TABLE)
-        Console().print(
-            f"Table [bold cyan]{table}[/bold cyan] was truncated ✨ 🍰 ✨")
+        logger.info(
+            f"Table {table} was truncated ✨ 🍰 ✨")
 
     def drop_column(self, table, column: typing.Union[str, list, tuple]):
         """Drop column"""
@@ -233,7 +235,7 @@ class MySQLConnection(ConnectionBackend):
                 table, ',DROP COLUMN '.join([col for col in column]))
 
         self.execute(DROP_COLUMN)
-        Console().print("Column was dropped ✨ 🍰 ✨")
+        logger.info("Column was dropped ✨ 🍰 ✨")
 
     def drop_table(self, table):
         """Drop table"""
@@ -248,8 +250,8 @@ class MySQLConnection(ConnectionBackend):
                 self.execute(DROP_TABLE)
         else:
             self.execute(DROP_TABLE)
-        Console().print(
-            f"Table [bold cyan]{table}[/bold cyan] was dropped ✨ 🍰 ✨")
+        logger.info(
+            f"Table {table} was dropped ✨ 🍰 ✨")
 
     def update(self, table, where: dict, target: dict):
         """Update table's data
@@ -270,7 +272,7 @@ class MySQLConnection(ConnectionBackend):
         WHERE {' and '.join(locs)};
             """
         self.execute(SQL)
-        Console().print(f"Update [bold cyan]data[/bold cyan] succsess ✨ 🍰 ✨")
+        logger.info(f"Update data succsess ✨ 🍰 ✨")
 
     def create_table(self,
                      table: str,
@@ -289,7 +291,7 @@ class MySQLConnection(ConnectionBackend):
         """
         # Build the CREATE TABLE statement pieces
         create_prefix = f'CREATE TABLE IF NOT EXISTS `{table}` (\n'
-        charset_suffix = '\n) DEFAULT CHARSET=utf8mb4;'
+        charset_suffix = '\n) \nDEFAULT CHARSET=utf8mb4;'
 
         # Handle column types
         types = dtypes or {}
@@ -297,14 +299,14 @@ class MySQLConnection(ConnectionBackend):
         comments = comments or {}
 
         # Normalize primary key to list
-        primary_key_fields = [primary_key] if isinstance(primary_key,
-                                                         str) else list(
-            primary_key)
+        primary_key_fields = [primary_key] if isinstance(
+            primary_key, str) else list(primary_key)
 
         # Add auto-increment ID if needed
         columns = []
         if 'id' in primary_key_fields and 'id' not in cols:
-            columns.append('`id` INT AUTO_INCREMENT COMMENT "auto increment id"')
+            columns.append(
+                '`id` INT AUTO_INCREMENT COMMENT "auto increment id"')
 
         # Build column definitions
         for col in cols:
@@ -328,10 +330,13 @@ class MySQLConnection(ConnectionBackend):
         # Assemble and execute final SQL
         create_sql = create_prefix + '\n, '.join(
             columns) + primary_key_def + charset_suffix
-        self.execute(create_sql)
 
-        Console().print(
-            f"Table [bold cyan]{table}[/bold cyan] was created ✨ 🍰 ✨")
+        try:
+            self.execute(create_sql)
+            logger.info(f"Table {table} was created ✨ 🍰 ✨")
+        except Exception as e:
+            logger.error(f"{traceback.format_exc()}\nPlease check this SQL:\n{create_sql}\n\n")
+
 
     def rename_table(self, table: str, name: str):
         """Rename table
@@ -342,9 +347,8 @@ class MySQLConnection(ConnectionBackend):
         """
         RENAME_TABLE = """ALTER TABLE {} RENAME TO {} ;""".format(table, name)
         self.execute(RENAME_TABLE)
-        Console().print(
-            "Renamed table [bold red]{}[/bold red] to [bold cyan]{}[/bold "
-            "cyan] ✨ 🍰 ✨".format(table, name))
+        logger.info(
+            "Renamed table {} to {} ✨ 🍰 ✨".format(table, name))
 
     def rename_column(self, table: str, column: str, name: str, dtype: str):
         """Rename column
@@ -361,7 +365,7 @@ class MySQLConnection(ConnectionBackend):
         RENAME_COLUMN = """ALTER  TABLE {} CHANGE COLUMN {} {} {};""".format(
             table, column, name, dtype)
         self.execute(RENAME_COLUMN)
-        Console().print("Renamed column {} to {} ✨ 🍰 ✨".format(column, name))
+        logger.info("Renamed column {} to {} ✨ 🍰 ✨".format(column, name))
 
     def add_column(
         self,
@@ -383,9 +387,8 @@ class MySQLConnection(ConnectionBackend):
         """
         MYSQL_KEYWORDS = ["CHANGE", "SCHEMA", "DEFAULT"]
         if column.upper() in MYSQL_KEYWORDS:
-            Console().print("%(column)s was SQL keyword or reserved word 😯\n" %
-                            {"column": column},
-                            style='red')
+            logger.warning("%(column)s was SQL keyword or reserved word 😯\n" %
+                            {"column": column})
             sys.exit(1)
 
         if after:
@@ -397,14 +400,14 @@ class MySQLConnection(ConnectionBackend):
                 table, column, dtype, comment)
 
         self.execute(ADD_COLUMN)
-        Console().print(f"Added column {column} to {table} ✨ 🍰 ✨")
+        logger.info(f"Added column {column} to {table} ✨ 🍰 ✨")
 
     def add_table_comment(self, table: str, comment: str):
         """Add comment for table"""
         ADD_TABLE_COMMENT = """ALTER TABLE {} COMMENT '{}' ;""".format(
             table, comment)
         self.execute(ADD_TABLE_COMMENT)
-        Console().print("Table comment added ✨ 🍰 ✨")
+        logger.info("Table comment added ✨ 🍰 ✨")
 
     def change_column_attribute(
         self,
@@ -428,8 +431,8 @@ class MySQLConnection(ConnectionBackend):
             table, column, dtype, "NOT NULL" if notnull else "DEFAULT NULL",
             comment)
         self.execute(CHANG_COLUMN_ATTRIBUTE)
-        Console().print(
-            "Column [bold cyan]{}[/bold cyan]'s attribute was modified "
+        logger.info(
+            "Column {}'s attribute was modified "
             "✨ 🍰 ✨".format(column))
 
     def add_primary_key(self, table: str, primary_key: typing.Union[str, list,
@@ -458,4 +461,4 @@ class MySQLConnection(ConnectionBackend):
 
         ADD_PRIMARY_KEY = f"""ALTER TABLE {table} ADD PRIMARY KEY ({PRIMARY_KEY});"""
         self.execute(ADD_PRIMARY_KEY)
-        Console().print("Well done ✨ 🍰 ✨")
+        logger.info("Well done ✨ 🍰 ✨")
