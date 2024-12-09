@@ -273,57 +273,65 @@ class MySQLConnection(ConnectionBackend):
         Console().print(f"Update [bold cyan]data[/bold cyan] succsess ✨ 🍰 ✨")
 
     def create_table(self,
-                     table,
+                     table: str,
                      df: pd.DataFrame = None,
                      comments: dict = None,
                      primary_key: typing.Union[str, list, tuple] = 'id',
-                     dtypes: dict = None):
-        """Create table"""
-        from toolz import merge
-        PREFIX = f'''CREATE TABLE IF NOT EXISTS `{table}` ('''
-        SUFFIX = ''') DEFAULT CHARSET=utf8mb4;'''
+                     dtypes: dict = None) -> None:
+        """Create a MySQL table with the specified configuration.
 
-        types = {}
-        if dtypes:
-            for dtype, type_cols in dtypes.items():
-                types = merge(types, {col: dtype for col in type_cols})
+        Args:
+            table: Name of the table to create
+            df: Optional DataFrame used to infer column types
+            comments: Optional dict mapping column names to comment strings
+            primary_key: Column(s) to use as primary key, defaults to 'id'
+            dtypes: Optional dict mapping column names to MySQL data types
+        """
+        # Build the CREATE TABLE statement pieces
+        create_prefix = f'CREATE TABLE IF NOT EXISTS `{table}` (\n'
+        charset_suffix = '\n) DEFAULT CHARSET=utf8mb4;'
 
-        cols = df.columns.tolist() if df is not None else types.keys()
+        # Handle column types
+        types = dtypes or {}
+        cols = df.columns.tolist() if df is not None else list(types.keys())
+        comments = comments or {}
 
-        if not primary_key:
-            primary_key = 'id'
+        # Normalize primary key to list
+        primary_key_fields = [primary_key] if isinstance(primary_key,
+                                                         str) else list(
+            primary_key)
 
-        primary_key_fields = [primary_key] if isinstance(
-            primary_key, str) else list(primary_key)
-
+        # Add auto-increment ID if needed
+        columns = []
         if 'id' in primary_key_fields and 'id' not in cols:
-            PREFIX += '''`id` INT AUTO_INCREMENT COMMENT 'id','''
+            columns.append('`id` INT AUTO_INCREMENT COMMENT "auto increment id"')
 
-        COLUMNS = []
-
+        # Build column definitions
         for col in cols:
-            comment = comments.get(col, "") if comments else ""
-            dtype = types.get(col, None)
+            comment = comments.get(col, "")
+            dtype = types.get(col)
 
             if dtype:
-                COLUMNS.append(f'''`{col}` {dtype} COMMENT "{comment}"''')
+                col_def = f'`{col}` {dtype}'
             else:
-                max_col_len = df[col].dropna().astype(str).str.len().max()
-                infer_dtype = check_dtype_mysql(pdtype=df[col].dtypes,
-                                                max_content_len=max_col_len)
-                COLUMNS.append(
-                    f'''`{col}` {infer_dtype} COMMENT "{comment}"''')
+                max_len = df[col].dropna().astype(str).str.len().max()
+                col_def = f'`{col}` {check_dtype_mysql(df[col].dtypes, max_len)}'
 
-        if isinstance(primary_key, str):
-            PRIMARY_SEG = f' ,PRIMARY KEY (`{primary_key}`)'
-        elif isinstance(primary_key, (list, tuple, set)):
-            PRIMARY_SEG = f' ,PRIMARY KEY (`{"`, `".join(primary_key)}`)'
+            if comment:
+                col_def += f' COMMENT "{comment}"'
+            columns.append(col_def)
 
-        CREATE_TABLE = PREFIX + ','.join(COLUMNS) + PRIMARY_SEG + SUFFIX
+        # Add primary key constraint
+        pk_cols = '`, `'.join(primary_key_fields)
+        primary_key_def = f'\n, PRIMARY KEY (`{pk_cols}`)'
 
-        self.execute(CREATE_TABLE)
+        # Assemble and execute final SQL
+        create_sql = create_prefix + '\n, '.join(
+            columns) + primary_key_def + charset_suffix
+        self.execute(create_sql)
+
         Console().print(
-            f"Table [blod cyan]{table}[/blod cyan] was created ✨ 🍰 ✨")
+            f"Table [bold cyan]{table}[/bold cyan] was created ✨ 🍰 ✨")
 
     def rename_table(self, table: str, name: str):
         """Rename table
