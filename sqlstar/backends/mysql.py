@@ -165,10 +165,18 @@ class MySQLConnection(ConnectionBackend):
         """
         assert self._connection is not None, "Connection is not acquired"
         cursor = self._connection.cursor()
-        INSERT_MANY = "INSERT IGNORE INTO {table}  ({cols})  VALUES ({values});".format(
-            table=table,
-            cols=", ".join(["`%s`" % col for col in cols]),
-            values=", ".join(["%s" for col in cols]))
+        # 构建列名部分
+        cols_str = ", ".join([f"`{col}`" for col in cols])
+        # 构建占位符部分
+        placeholders = ", ".join(["%s" for _ in cols])
+        # 构建UPDATE部分
+        update_stmt = ", ".join([f"`{col}` = VALUES(`{col}`)" for col in cols])
+
+        INSERT_MANY = f"""
+                INSERT INTO {table} ({cols_str}) 
+                VALUES ({placeholders})
+                ON DUPLICATE KEY UPDATE {update_stmt}
+            """
 
         cursor.executemany(INSERT_MANY, data)
         Console().print(f"[bold cyan]{table}[/bold cyan] inserts [bold cyan]"
@@ -268,7 +276,7 @@ class MySQLConnection(ConnectionBackend):
                      table,
                      df: pd.DataFrame = None,
                      comments: dict = None,
-                     primary_key: typing.Union[str, list, tuple] = None,
+                     primary_key: typing.Union[str, list, tuple] = 'id',
                      dtypes: dict = None):
         """Create table"""
         from toolz import merge
@@ -282,8 +290,13 @@ class MySQLConnection(ConnectionBackend):
 
         cols = df.columns.tolist() if df is not None else types.keys()
 
-        # if there is no id, add an auto_increment id
-        if ('id' not in cols) or ('id' not in primary_key):
+        if not primary_key:
+            primary_key = 'id'
+
+        primary_key_fields = [primary_key] if isinstance(
+            primary_key, str) else list(primary_key)
+
+        if 'id' in primary_key_fields and 'id' not in cols:
             PREFIX += '''`id` INT AUTO_INCREMENT COMMENT 'id','''
 
         COLUMNS = []
@@ -301,11 +314,10 @@ class MySQLConnection(ConnectionBackend):
                 COLUMNS.append(
                     f'''`{col}` {infer_dtype} COMMENT "{comment}"''')
 
-        PRIMARY_SEG = f' ,PRIMARY KEY (`id`)'
-        if isinstance(primary_key, str) and (not primary_key == 'id'):
-            PRIMARY_SEG = f' ,PRIMARY KEY (`id`, `{primary_key}`)'
+        if isinstance(primary_key, str):
+            PRIMARY_SEG = f' ,PRIMARY KEY (`{primary_key}`)'
         elif isinstance(primary_key, (list, tuple, set)):
-            PRIMARY_SEG = f' ,PRIMARY KEY (`id`, `{"`,`".join(primary_key)}`)'
+            PRIMARY_SEG = f' ,PRIMARY KEY (`{"`, `".join(primary_key)}`)'
 
         CREATE_TABLE = PREFIX + ','.join(COLUMNS) + PRIMARY_SEG + SUFFIX
 

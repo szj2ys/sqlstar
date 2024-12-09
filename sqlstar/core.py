@@ -168,7 +168,7 @@ class Database:
                      table,
                      df: pd.DataFrame = None,
                      comments: dict = None,
-                     primary_key: typing.Union[str, list, tuple] = None,
+                     primary_key: typing.Union[str, list, tuple] = 'id',
                      dtypes: dict = None):
         """Create table"""
         return self.connection().create_table(table, df, comments, primary_key,
