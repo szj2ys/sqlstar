@@ -133,9 +133,9 @@ class Database:
         """
         return self.connection().truncate_table(table)
 
-    def drop_table(self, table: typing.Union[str]):
+    def drop_table(self, table: typing.Union[str], assure=True):
         """Drop table"""
-        return self.connection().drop_table(table)
+        return self.connection().drop_table(table, assure)
 
     def update(self, table, where: dict, target: dict):
         """Update table's data"""
@@ -360,8 +360,8 @@ class Connection:
         return self._connection.change_column_attribute(
             table, column, dtype, notnull, comment)
 
-    def drop_table(self, table: typing.Union[str]):
-        return self._connection.drop_table(table)
+    def drop_table(self, table: typing.Union[str], assure):
+        return self._connection.drop_table(table, assure)
 
     def update(self, table, where: dict, target: dict):
         """Update table's data"""

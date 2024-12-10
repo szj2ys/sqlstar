@@ -45,7 +45,7 @@ class ConnectionBackend:
     def export_excel(self, query: typing.Union[str], fname: typing.Union[str]):
         raise NotImplementedError()
 
-    def drop_table(self, table):
+    def drop_table(self, table, assure):
         raise NotImplementedError()
 
     def drop_column(self, table, column: typing.Union[str, list, tuple]):

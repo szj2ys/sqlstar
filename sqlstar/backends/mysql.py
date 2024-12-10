@@ -238,20 +238,40 @@ class MySQLConnection(ConnectionBackend):
         self.execute(DROP_COLUMN)
         logger.info("Column was dropped ✨ 🍰 ✨")
 
-    def drop_table(self, table):
-        """Drop table"""
-        DROP_TABLE = f"""DROP TABLE IF EXISTS `{table}`;"""
-        data = self.fetch_all(f'''SELECT * FROM {table} LIMIT 10;''')
+    def drop_table(self, table, assure):
+        """Drop table with safety checks
 
-        # if the table is not empty, warning user
-        if data:
-            confirm = click.confirm(f"Are you sure to drop table {table} ?",
-                                    default=False)
-            if confirm:
-                self.execute(DROP_TABLE)
-        else:
-            self.execute(DROP_TABLE)
-        logger.info(f"Table {table} was dropped ✨ 🍰 ✨")
+        Args:
+            table (str): Table name to drop
+            assure (bool): Whether to confirm before dropping non-empty table
+        """
+        if not table:
+            raise ValueError("Table name cannot be empty")
+
+        table = table.strip('`')  # 移除可能存在的反引号
+        drop_sql = f"DROP TABLE IF EXISTS `{table}`"
+
+        try:
+            # 只检查是否存在数据,不需要实际获取数据
+            has_data = bool(
+                self.fetch_all(f'''SELECT * FROM {table} LIMIT 10;'''))
+
+            if has_data:
+                if assure:
+                    if not click.confirm(
+                            f"Table '{table}' contains data. Confirm drop?",
+                            default=False):
+                        logger.info(f"Drop table '{table}' cancelled")
+                        return False
+
+            self.execute(drop_sql)
+            logger.info(f"Table '{table}' dropped successfully ✨")
+            return True
+
+        except:
+            logger.error(
+                f"Failed to drop table '{table}':\n{str(traceback.format_exc())}"
+            )
 
     def update(self, table, where: dict, target: dict):
         """Update table's data
