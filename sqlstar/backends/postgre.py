@@ -4,7 +4,7 @@ import sys
 import typing
 import click
 import pandas as pd
-from loguru import logger
+from sqlstar import logger
 import warnings
 import psycopg
 # https://www.psycopg.org/psycopg3
@@ -171,7 +171,7 @@ class PostgreConnection(ConnectionBackend):
 
         cursor.executemany(INSERT_MANY, data)
         logger.info(f"{table} inserts "
-                        f"{len(data)} records ✨ 🍰 ✨")
+                    f"{len(data)} records ✨ 🍰 ✨")
         cursor.close()
 
     def insert_df(self, table, df: pd.DataFrame, dropna=True, **kwargs):
@@ -208,8 +208,7 @@ class PostgreConnection(ConnectionBackend):
         TRUNCATE_TABLE = """TRUNCATE TABLE {};""".format(table)
 
         self.execute(TRUNCATE_TABLE)
-        logger.info(
-            f"Table {table} was truncated ✨ 🍰 ✨")
+        logger.info(f"Table {table} was truncated ✨ 🍰 ✨")
 
     def drop_column(self, table, column: typing.Union[str, list, tuple]):
         """Drop column"""
@@ -236,8 +235,7 @@ class PostgreConnection(ConnectionBackend):
                 self.execute(DROP_TABLE)
         else:
             self.execute(DROP_TABLE)
-        logger.info(
-            f"Table {table} was dropped ✨ 🍰 ✨")
+        logger.info(f"Table {table} was dropped ✨ 🍰 ✨")
 
     def create_table(self,
                      table,
@@ -284,8 +282,7 @@ class PostgreConnection(ConnectionBackend):
         CREATE_TABLE = PREFIX + ','.join(COLUMNS) + PRIMARY_SEG + SUFFIX
 
         self.execute(CREATE_TABLE)
-        logger.info(
-            f"Table {table} was created ✨ 🍰 ✨")
+        logger.info(f"Table {table} was created ✨ 🍰 ✨")
 
     def rename_table(self, table: str, name: str):
         """Rename table
@@ -296,8 +293,7 @@ class PostgreConnection(ConnectionBackend):
         """
         RENAME_TABLE = """ALTER TABLE {} RENAME TO {} ;""".format(table, name)
         self.execute(RENAME_TABLE)
-        logger.info(
-            "Renamed table {} to {} ✨ 🍰 ✨".format(table, name))
+        logger.info("Renamed table {} to {} ✨ 🍰 ✨".format(table, name))
 
     def rename_column(self, table: str, column: str, name: str, dtype: str):
         """Rename column
@@ -338,8 +334,7 @@ class PostgreConnection(ConnectionBackend):
         MYSQL_KEYWORDS = ["CHANGE", "SCHEMA", "DEFAULT"]
         if column.upper() in MYSQL_KEYWORDS:
             logger.error("%(column)s was SQL keyword or reserved word 😯\n" %
-                            {"column": column}
-                            )
+                         {"column": column})
             sys.exit(1)
 
         if after:
@@ -382,9 +377,8 @@ class PostgreConnection(ConnectionBackend):
             table, column, dtype, "NOT NULL" if notnull else "DEFAULT NULL",
             comment)
         self.execute(CHANG_COLUMN_ATTRIBUTE)
-        logger.info(
-            "Column {}'s attribute was modified "
-            "✨ 🍰 ✨".format(column))
+        logger.info("Column {}'s attribute was modified "
+                    "✨ 🍰 ✨".format(column))
 
     def add_primary_key(self, table: str, primary_key: typing.Union[str, list,
                                                                     tuple]):

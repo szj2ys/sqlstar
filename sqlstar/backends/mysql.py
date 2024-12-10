@@ -8,7 +8,7 @@ import pandas as pd
 
 import warnings
 import pymysql
-from loguru import logger
+from sqlstar import logger
 
 from sqlstar.core import DatabaseURL
 from sqlstar.interfaces import ConnectionBackend, DatabaseBackend
@@ -134,6 +134,8 @@ class MySQLConnection(ConnectionBackend):
         try:
             result = cursor.execute(query)
             return result
+        except Exception:
+            raise Exception(f"This SQL execution failed👇\n{query}")
         finally:
             cursor.close()
 
@@ -182,7 +184,7 @@ class MySQLConnection(ConnectionBackend):
 
         cursor.executemany(INSERT_MANY, data)
         logger.info(f"{table} inserts "
-                        f"{len(data)} records ✨ 🍰 ✨")
+                    f"{len(data)} records ✨ 🍰 ✨")
         cursor.close()
 
     def insert_df(self, table, df: pd.DataFrame, dropna=False, **kwargs):
@@ -222,8 +224,7 @@ class MySQLConnection(ConnectionBackend):
         TRUNCATE_TABLE = """TRUNCATE TABLE {};""".format(table)
 
         self.execute(TRUNCATE_TABLE)
-        logger.info(
-            f"Table {table} was truncated ✨ 🍰 ✨")
+        logger.info(f"Table {table} was truncated ✨ 🍰 ✨")
 
     def drop_column(self, table, column: typing.Union[str, list, tuple]):
         """Drop column"""
@@ -250,8 +251,7 @@ class MySQLConnection(ConnectionBackend):
                 self.execute(DROP_TABLE)
         else:
             self.execute(DROP_TABLE)
-        logger.info(
-            f"Table {table} was dropped ✨ 🍰 ✨")
+        logger.info(f"Table {table} was dropped ✨ 🍰 ✨")
 
     def update(self, table, where: dict, target: dict):
         """Update table's data
@@ -279,7 +279,7 @@ class MySQLConnection(ConnectionBackend):
                      df: pd.DataFrame = None,
                      comments: dict = None,
                      primary_key: typing.Union[str, list, tuple] = 'id',
-                     dtypes: dict = None) -> None:
+                     dtypes: dict = None):
         """Create a MySQL table with the specified configuration.
 
         Args:
@@ -331,12 +331,9 @@ class MySQLConnection(ConnectionBackend):
         create_sql = create_prefix + '\n, '.join(
             columns) + primary_key_def + charset_suffix
 
-        try:
-            self.execute(create_sql)
-            logger.info(f"Table {table} was created ✨ 🍰 ✨")
-        except Exception as e:
-            logger.error(f"{traceback.format_exc()}\nPlease check this SQL:\n{create_sql}\n\n")
-
+        self.execute(create_sql)
+        logger.info(f"Table {table} was created ✨ 🍰 ✨")
+        return create_sql
 
     def rename_table(self, table: str, name: str):
         """Rename table
@@ -347,8 +344,7 @@ class MySQLConnection(ConnectionBackend):
         """
         RENAME_TABLE = """ALTER TABLE {} RENAME TO {} ;""".format(table, name)
         self.execute(RENAME_TABLE)
-        logger.info(
-            "Renamed table {} to {} ✨ 🍰 ✨".format(table, name))
+        logger.info("Renamed table {} to {} ✨ 🍰 ✨".format(table, name))
 
     def rename_column(self, table: str, column: str, name: str, dtype: str):
         """Rename column
@@ -388,7 +384,7 @@ class MySQLConnection(ConnectionBackend):
         MYSQL_KEYWORDS = ["CHANGE", "SCHEMA", "DEFAULT"]
         if column.upper() in MYSQL_KEYWORDS:
             logger.warning("%(column)s was SQL keyword or reserved word 😯\n" %
-                            {"column": column})
+                           {"column": column})
             sys.exit(1)
 
         if after:
@@ -431,9 +427,8 @@ class MySQLConnection(ConnectionBackend):
             table, column, dtype, "NOT NULL" if notnull else "DEFAULT NULL",
             comment)
         self.execute(CHANG_COLUMN_ATTRIBUTE)
-        logger.info(
-            "Column {}'s attribute was modified "
-            "✨ 🍰 ✨".format(column))
+        logger.info("Column {}'s attribute was modified "
+                    "✨ 🍰 ✨".format(column))
 
     def add_primary_key(self, table: str, primary_key: typing.Union[str, list,
                                                                     tuple]):
