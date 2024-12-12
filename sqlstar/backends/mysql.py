@@ -211,7 +211,7 @@ class MySQLConnection(ConnectionBackend):
                           subset=kwargs.get('subset'),
                           inplace=True)
             else:
-                df = df.fillna(value='None')
+                df = df.replace(['None', 'NULL', 'NA'], None)
             data = [tuple(row) for row in df[cols].values]
             self.insert_many(table, data, cols)
 
