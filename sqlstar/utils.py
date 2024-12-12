@@ -35,8 +35,8 @@ def check_dtype_mysql(pdtype, max_content_len, charset_len=4, min_len=4):
         str: 对应的MySQL数据类型
     """
     max_content_len = min_len if pd.isna(max_content_len) else max_content_len
-    # 考虑25%的冗余空间
-    max_content_len = max(min_len, int(max_content_len * 1.25))
+    # 考虑冗余空间
+    max_content_len = max(min_len, int(max_content_len * 2))
     pdtype_str = str(pdtype).lower()
 
     # 基本数值类型判断
