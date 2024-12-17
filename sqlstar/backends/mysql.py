@@ -88,14 +88,16 @@ class MySQLConnection(ConnectionBackend):
         finally:
             cursor.close()
 
-    def fetch_df(self, query: typing.Union[str]):
+    def fetch_df(self, query: typing.Union[str], *args: typing.Any,
+                 **kwargs: typing.Any):
         """Fetch data, and format result into Dataframe
 
         :param query:
         :return: Dataframe
         """
-        data = self.fetch_all(query)
-        return pd.DataFrame(data)
+        assert self._connection is not None, "Connection is not acquired"
+
+        return pd.read_sql(query, self._connection, *args, **kwargs)
 
     def export_csv(self,
                    query: typing.Union[str],
@@ -184,7 +186,7 @@ class MySQLConnection(ConnectionBackend):
 
         cursor.executemany(INSERT_MANY, data)
         logger.info(f"{table} inserts "
-                    f"{len(data)} records ✨ 🍰 ✨")
+                    f"{len(data)} records ✨🍰✨")
         cursor.close()
 
     def insert_df(self, table, df: pd.DataFrame, dropna=False, **kwargs):
@@ -226,7 +228,7 @@ class MySQLConnection(ConnectionBackend):
         TRUNCATE_TABLE = """TRUNCATE TABLE {};""".format(table)
 
         self.execute(TRUNCATE_TABLE)
-        logger.info(f"Table {table} was truncated ✨ 🍰 ✨")
+        logger.info(f"Table {table} was truncated ✨🍰✨")
 
     def drop_column(self, table, column: typing.Union[str, list, tuple]):
         """Drop column"""
@@ -238,7 +240,7 @@ class MySQLConnection(ConnectionBackend):
                 table, ',DROP COLUMN '.join([col for col in column]))
 
         self.execute(DROP_COLUMN)
-        logger.info("Column was dropped ✨ 🍰 ✨")
+        logger.info("Column was dropped ✨🍰✨")
 
     def drop_table(self, table, assure):
         """Drop table with safety checks
@@ -267,7 +269,7 @@ class MySQLConnection(ConnectionBackend):
                         return False
 
             self.execute(drop_sql)
-            logger.info(f"Table '{table}' dropped successfully ✨")
+            logger.info(f"Table '{table}' dropped successfully ✨🍰✨")
             return True
 
         except:
@@ -294,7 +296,7 @@ class MySQLConnection(ConnectionBackend):
         WHERE {' and '.join(locs)};
             """
         self.execute(SQL)
-        logger.info(f"Update data succsess ✨ 🍰 ✨")
+        logger.info(f"Update data succsess ✨🍰✨")
 
     def create_table(self,
                      table: str,
@@ -354,7 +356,7 @@ class MySQLConnection(ConnectionBackend):
             columns) + primary_key_def + charset_suffix
 
         self.execute(create_sql)
-        logger.info(f"Table {table} was created ✨ 🍰 ✨")
+        logger.info(f"Table {table} was created ✨🍰✨")
         return create_sql
 
     def rename_table(self, table: str, name: str):
@@ -366,7 +368,7 @@ class MySQLConnection(ConnectionBackend):
         """
         RENAME_TABLE = """ALTER TABLE {} RENAME TO {} ;""".format(table, name)
         self.execute(RENAME_TABLE)
-        logger.info("Renamed table {} to {} ✨ 🍰 ✨".format(table, name))
+        logger.info("Renamed table {} to {} ✨🍰✨".format(table, name))
 
     def rename_column(self, table: str, column: str, name: str, dtype: str):
         """Rename column
@@ -383,7 +385,7 @@ class MySQLConnection(ConnectionBackend):
         RENAME_COLUMN = """ALTER  TABLE {} CHANGE COLUMN {} {} {};""".format(
             table, column, name, dtype)
         self.execute(RENAME_COLUMN)
-        logger.info("Renamed column {} to {} ✨ 🍰 ✨".format(column, name))
+        logger.info("Renamed column {} to {} ✨🍰✨".format(column, name))
 
     def add_column(
         self,
@@ -418,14 +420,14 @@ class MySQLConnection(ConnectionBackend):
                 table, column, dtype, comment)
 
         self.execute(ADD_COLUMN)
-        logger.info(f"Added column {column} to {table} ✨ 🍰 ✨")
+        logger.info(f"Added column {column} to {table} ✨🍰✨")
 
     def add_table_comment(self, table: str, comment: str):
         """Add comment for table"""
         ADD_TABLE_COMMENT = """ALTER TABLE {} COMMENT '{}' ;""".format(
             table, comment)
         self.execute(ADD_TABLE_COMMENT)
-        logger.info("Table comment added ✨ 🍰 ✨")
+        logger.info("Table comment added ✨🍰✨")
 
     def change_column_attribute(
         self,
@@ -450,7 +452,7 @@ class MySQLConnection(ConnectionBackend):
             comment)
         self.execute(CHANG_COLUMN_ATTRIBUTE)
         logger.info("Column {}'s attribute was modified "
-                    "✨ 🍰 ✨".format(column))
+                    "✨🍰✨".format(column))
 
     def add_primary_key(self, table: str, primary_key: typing.Union[str, list,
                                                                     tuple]):
@@ -478,4 +480,4 @@ class MySQLConnection(ConnectionBackend):
 
         ADD_PRIMARY_KEY = f"""ALTER TABLE {table} ADD PRIMARY KEY ({PRIMARY_KEY});"""
         self.execute(ADD_PRIMARY_KEY)
-        logger.info("Well done ✨ 🍰 ✨")
+        logger.info("Well done ✨🍰✨")

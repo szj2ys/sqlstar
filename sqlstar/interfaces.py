@@ -35,7 +35,8 @@ class ConnectionBackend:
     def update(self, table, where: dict, target: dict):
         raise NotImplementedError()
 
-    def fetch_df(self, table: typing.Union[str]):
+    def fetch_df(self, table: typing.Union[str], *args: typing.Any,
+                 **kwargs: typing.Any):
         raise NotImplementedError()
 
     def export_csv(self, query: typing.Union[str], fname: typing.Union[str],

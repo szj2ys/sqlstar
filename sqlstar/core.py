@@ -145,13 +145,14 @@ class Database:
         """Drop column"""
         return self.connection().drop_column(table, column)
 
-    def fetch_df(self, query: typing.Union[str]):
+    def fetch_df(self, query: typing.Union[str], *args: typing.Any,
+                 **kwargs: typing.Any):
         """Fetch data, and format result into Dataframe
 
         :param query:
         :return: Dataframe
         """
-        return self.connection().fetch_df(query)
+        return self.connection().fetch_df(query, *args, **kwargs)
 
     def export_csv(self,
                    query: typing.Union[str],
@@ -312,8 +313,9 @@ class Connection:
     def truncate_table(self, table: typing.Union[str]):
         return self._connection.truncate_table(table)
 
-    def fetch_df(self, query: typing.Union[str]):
-        return self._connection.fetch_df(query)
+    def fetch_df(self, query: typing.Union[str], *args: typing.Any,
+                 **kwargs: typing.Any):
+        return self._connection.fetch_df(query, *args, **kwargs)
 
     def export_csv(self, query: typing.Union[str], fname: typing.Union[str],
                    sep: typing.Any):
