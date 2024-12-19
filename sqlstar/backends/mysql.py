@@ -1,5 +1,6 @@
 # *_*coding:utf-8 *_*
 import getpass
+import re
 import sys
 import traceback
 import typing
@@ -116,6 +117,9 @@ class MySQLConnection(ConnectionBackend):
         """Fetch several rows"""
         assert self._connection is not None, "Connection is not acquired"
         cursor = self._connection.cursor()
+        limit_match = re.search(r'\bLIMIT\s+(\d+)', query, re.IGNORECASE)
+        if not size and limit_match:
+            size = int(limit_match.group(1))
         try:
             cursor.execute(query)
             result = cursor.fetchmany(size)
